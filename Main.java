@@ -6,6 +6,11 @@ import com.assistant.CommandManager;
 import com.assistant.commands.HelloCommand;
 import com.assistant.commands.TimeCommand;
 import com.assistant.commands.DateCommand;
+import com.assistant.commands.WeatherCommand;
+import com.assistant.commands.JokeCommand;
+import com.assistant.commands.CatFactCommand;
+import com.assistant.commands.NewsCommand;
+import com.assistant.commands.CurrencyCommand;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
@@ -14,6 +19,11 @@ public class Main {
         commandManager.register("привет", new HelloCommand());
         commandManager.register("время", new TimeCommand());
         commandManager.register("дата", new DateCommand());
+        commandManager.register("погода", new WeatherCommand());
+        commandManager.register("шутка", new JokeCommand());
+        commandManager.register("факт", new CatFactCommand());
+        commandManager.register("новости", new NewsCommand());
+        commandManager.register("валюта", new CurrencyCommand());
         
         Gson gson = new Gson();
         
