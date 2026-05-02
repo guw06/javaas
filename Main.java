@@ -34,6 +34,7 @@ public class Main {
         commandManager.register("блокнот", new OpenNotepadCommand());
         commandManager.register("запомни", new RememberCommand());
         commandManager.register("вспомни", new ReadMemoryCommand());
+        // GeminiCommand больше не нужен - Gemini теперь встроен в CommandManager
         
         Gson gson = new Gson();
         
