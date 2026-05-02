@@ -3,26 +3,20 @@ import com.google.gson.Gson;
 import com.assistant.models.RequestDto;
 import com.assistant.models.ResponseDto;
 import com.assistant.CommandManager;
-import com.assistant.commands.HelloCommand;
-import com.assistant.commands.TimeCommand;
-import com.assistant.commands.DateCommand;
-import com.assistant.commands.WeatherCommand;
-import com.assistant.commands.JokeCommand;
-import com.assistant.commands.CatFactCommand;
-import com.assistant.commands.NewsCommand;
-import com.assistant.commands.CurrencyCommand;
-import com.assistant.commands.OpenBrowserCommand;
-import com.assistant.commands.GoogleSearchCommand;
-import com.assistant.commands.OpenNotepadCommand;
-import com.assistant.commands.RememberCommand;
-import com.assistant.commands.ReadMemoryCommand;
-import com.assistant.commands.ScreenshotCommand;
-import com.assistant.commands.ClipboardCommand;
+import com.assistant.commands.*;
+import com.assistant.services.SystemMonitorService;
+import com.assistant.services.DatabaseService;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
 
     public static void main(String[] args) {
+        // Инициализируем базу данных
+        DatabaseService database = new DatabaseService();
+        
+        // Запускаем мониторинг системы
+        SystemMonitorService systemMonitor = new SystemMonitorService();
+        systemMonitor.startMonitoring();
         commandManager.register("привет", new HelloCommand());
         commandManager.register("время", new TimeCommand());
         commandManager.register("дата", new DateCommand());
@@ -38,6 +32,8 @@ public class Main {
         commandManager.register("вспомни", new ReadMemoryCommand());
         commandManager.register("скриншот", new ScreenshotCommand());
         commandManager.register("буфер", new ClipboardCommand());
+        commandManager.register("статистика", new SystemStatsCommand());
+        commandManager.register("система", new SystemStatsCommand());
         // GeminiCommand больше не нужен - Gemini теперь встроен в CommandManager
         
         Gson gson = new Gson();
