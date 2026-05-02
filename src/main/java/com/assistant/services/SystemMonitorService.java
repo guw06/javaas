@@ -9,19 +9,20 @@ public class SystemMonitorService {
     private static final double MEMORY_THRESHOLD = 90.0; // Порог в процентах
     
     public SystemMonitorService() {
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "SystemMonitor");
-            thread.setDaemon(true); // Демон-поток, чтобы не блокировать завершение приложения
-            return thread;
-        });
+        // Используем Virtual Thread для мониторинга (Java 21)
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> 
+            Thread.ofVirtual()
+                .name("SystemMonitor-Virtual")
+                .unstarted(r)
+        );
     }
     
     /**
      * Запускает мониторинг системных ресурсов
-     * Проверка выполняется каждую минуту
+     * Проверка выполняется каждую минуту в Virtual Thread
      */
     public void startMonitoring() {
-        System.out.println("🔍 Мониторинг системы запущен");
+        System.out.println("🔍 Мониторинг системы запущен (Virtual Thread)");
         
         scheduler.scheduleAtFixedRate(() -> {
             try {

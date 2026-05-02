@@ -6,6 +6,7 @@ import com.assistant.CommandManager;
 import com.assistant.commands.*;
 import com.assistant.services.SystemMonitorService;
 import com.assistant.services.DatabaseService;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
@@ -42,9 +43,27 @@ public class Main {
         
         Gson gson = new Gson();
         
+        // Создаем Javalin с Virtual Threads (Project Loom)
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+            // Включаем Virtual Threads для обработки запросов
+            config.jetty.threadPool = new org.eclipse.jetty.util.thread.QueuedThreadPool(
+                200, 8, 60_000
+            ) {
+                @Override
+                protected Thread newThread(Runnable runnable) {
+                    return Thread.ofVirtual().unstarted(runnable);
+                }
+            };
         }).start(8080);
+        
+        System.out.println("\n" +
+            "═══════════════════════════════════════════════════════════\n" +
+            "  🚀 Сервер запущен на порту 8080\n" +
+            "  ⚡ Виртуальные потоки (Project Loom) активированы\n" +
+            "  🔗 http://localhost:8080\n" +
+            "═══════════════════════════════════════════════════════════\n"
+        );
 
         app.get("/ping", ctx -> ctx.result("pong"));
         
