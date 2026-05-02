@@ -128,6 +128,17 @@ public class DatabaseService {
     }
     
     /**
+     * Логирует взаимодействие пользователя с ассистентом
+     * Алиас для saveHistory
+     * 
+     * @param userRequest запрос пользователя
+     * @param aiResponse ответ ассистента
+     */
+    public void logInteraction(String userRequest, String aiResponse) {
+        saveHistory(userRequest, aiResponse);
+    }
+    
+    /**
      * Получает последние N записей из истории
      * 
      * @param limit количество записей

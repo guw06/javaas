@@ -50,7 +50,14 @@ public class Main {
         
         app.post("/api/command", ctx -> {
             RequestDto request = gson.fromJson(ctx.body(), RequestDto.class);
-            String result = commandManager.process(request.getText());
+            String userText = request.getText();
+            
+            // Обрабатываем команду
+            String result = commandManager.process(userText);
+            
+            // Сохраняем взаимодействие в историю
+            database.logInteraction(userText, result);
+            
             ResponseDto response = new ResponseDto(result);
             ctx.json(response);
         });
