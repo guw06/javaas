@@ -59,9 +59,27 @@ async function handleSendCommand() {
         
         // Добавляем ответ ассистента
         addMessage(response, false);
+        
+        // Озвучиваем ответ
+        if (window.speak && voiceEnabled) {
+            window.speak(response);
+        }
     } catch (error) {
         hideTypingIndicator();
-        addMessage('Произошла ошибка при обработке команды', false);
+        console.error('Ошибка:', error);
+        
+        let errorMsg = 'Произошла ошибка при обработке команды';
+        if (!navigator.onLine) {
+            errorMsg = '❌ Нет подключения к интернету';
+        } else if (!isOnline) {
+            errorMsg = '❌ Сервер недоступен. Проверьте, запущен ли backend';
+        }
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'message error-message';
+        errorDiv.textContent = errorMsg;
+        messagesContainer.appendChild(errorDiv);
+        scrollToBottom();
     } finally {
         // Включаем кнопку и инпут обратно
         sendButton.disabled = false;
@@ -69,6 +87,9 @@ async function handleSendCommand() {
         textInput.focus();
     }
 }
+
+// Экспортируем функцию для использования в app.js
+window.handleSendCommand = handleSendCommand;
 
 sendButton.addEventListener('click', handleSendCommand);
 
@@ -81,4 +102,111 @@ textInput.addEventListener('keypress', (e) => {
 // Приветственное сообщение
 window.addEventListener('DOMContentLoaded', () => {
     addMessage('Здравствуйте! Я ваш голосовой ассистент. Чем могу помочь?', false);
+    
+    // Привязываем обработчик к кнопке микрофона
+    micButton.addEventListener('click', () => {
+        if (window.startVoiceRecognition) {
+            window.startVoiceRecognition();
+        }
+    });
+    
+    // Двойной клик для включения continuous режима
+    micButton.addEventListener('dblclick', () => {
+        if (window.toggleContinuousMode) {
+            const isEnabled = window.toggleContinuousMode();
+            addMessage(
+                isEnabled 
+                    ? 'Режим постоянной прослушки включен. Используйте wake words: джарвис, алиса, ассистент' 
+                    : 'Режим постоянной прослушки выключен',
+                false
+            );
+        }
+    });
 });
+
+
+// Кнопка для включения/выключения озвучивания
+let voiceEnabled = true;
+
+// Добавляем функции управления
+window.toggleVoice = function() {
+    voiceEnabled = !voiceEnabled;
+    console.log('Озвучивание:', voiceEnabled ? 'включено' : 'выключено');
+    return voiceEnabled;
+};
+
+window.getVoiceEnabled = function() {
+    return voiceEnabled;
+};
+
+
+// Проверка подключения к серверу
+let isOnline = true;
+const connectionStatus = document.getElementById('connection-status');
+const statusText = document.getElementById('status-text');
+const modeIndicator = document.getElementById('mode-indicator');
+
+async function checkConnection() {
+    try {
+        const response = await fetch('http://localhost:8080/ping', {
+            method: 'GET',
+            cache: 'no-cache'
+        });
+        
+        if (response.ok) {
+            if (!isOnline) {
+                isOnline = true;
+                updateConnectionStatus(true);
+                addMessage('✅ Соединение восстановлено', false);
+            }
+        } else {
+            throw new Error('Server error');
+        }
+    } catch (error) {
+        if (isOnline) {
+            isOnline = false;
+            updateConnectionStatus(false);
+            addMessage('❌ Потеряно соединение с сервером', false);
+        }
+    }
+}
+
+function updateConnectionStatus(online) {
+    if (online) {
+        connectionStatus.classList.remove('offline');
+        connectionStatus.classList.add('online');
+        statusText.textContent = 'Подключено';
+    } else {
+        connectionStatus.classList.remove('online');
+        connectionStatus.classList.add('offline');
+        statusText.textContent = 'Нет связи';
+    }
+}
+
+// Проверяем соединение каждые 5 секунд
+setInterval(checkConnection, 5000);
+
+// Обновление индикатора режима
+window.updateModeIndicator = function(continuousMode) {
+    if (continuousMode) {
+        modeIndicator.classList.add('active');
+        micButton.classList.add('continuous-mode');
+    } else {
+        modeIndicator.classList.remove('active');
+        micButton.classList.remove('continuous-mode');
+    }
+};
+
+// Обработка ошибок сети
+window.addEventListener('online', () => {
+    updateConnectionStatus(true);
+    addMessage('🌐 Интернет-соединение восстановлено', false);
+});
+
+window.addEventListener('offline', () => {
+    updateConnectionStatus(false);
+    addMessage('🌐 Нет подключения к интернету', false);
+});
+
+// Улучшенная обработка ошибок в handleSendCommand
+const originalHandleSendCommand = window.handleSendCommand;
