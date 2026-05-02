@@ -25,7 +25,7 @@ public class ScreenshotCommand implements Command {
             
             System.out.println("Скриншот сохранен: " + outputFile.getAbsolutePath());
             
-            return "Скриншот успешно сохранен в " + outputFile.getAbsolutePath();
+            return "Скриншот сохранен по пути: " + outputFile.getAbsolutePath();
             
         } catch (AWTException e) {
             System.err.println("Ошибка AWT при создании скриншота: " + e.getMessage());

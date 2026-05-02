@@ -9,17 +9,6 @@ import com.assistant.services.DatabaseService;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 public class Main {
-    private static final class QueuedThreadPoolExtension extends org.eclipse.jetty.util.thread.QueuedThreadPool {
-        private QueuedThreadPoolExtension(int maxThreads, int minThreads, int idleTimeout) {
-            super(maxThreads, minThreads, idleTimeout);
-        }
-
-        @Override
-        protected Thread newThread(Runnable runnable) {
-            return Thread.ofVirtual().unstarted(runnable);
-        }
-    }
-
     private static final CommandManager commandManager = new CommandManager();
 
     public static void main(String[] args) {
@@ -44,7 +33,7 @@ public class Main {
         commandManager.register("браузер", new OpenBrowserCommand());
         commandManager.register("найди", new GoogleSearchCommand());
         commandManager.register("блокнот", new OpenNotepadCommand());
-        commandManager.register("запомни", new RememberCommand());
+        commandManager.register("запомни что", new RememberCommand());
         commandManager.register("вспомни", new ReadMemoryCommand());
         commandManager.register("скриншот", new ScreenshotCommand());
         commandManager.register("буфер", new ClipboardCommand());
@@ -58,7 +47,14 @@ public class Main {
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
             // Включаем Virtual Threads для обработки запросов
-            config.jetty.threadPool = new QueuedThreadPoolExtension(200, 8, 60_000);
+            config.jetty.threadPool = new org.eclipse.jetty.util.thread.QueuedThreadPool(
+                200, 8, 60_000
+            ) {
+                @Override
+                public Thread newThread(Runnable runnable) {
+                    return Thread.ofVirtual().unstarted(runnable);
+                }
+            };
         }).start(8080);
         
         System.out.println("\n" +

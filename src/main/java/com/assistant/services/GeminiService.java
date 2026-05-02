@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class GeminiService {
     private static final String API_KEY = "AIzaSyA2m5Z3tN8S-kaaTO-i4lHNYgsiLdhmOcY";
-    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=";
+    private static final String API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
     private final OkHttpClient client;
