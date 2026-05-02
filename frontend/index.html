@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Голосовой Ассистент</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Голосовой Ассистент</h1>
+        
+        <div id="chat-container">
+            <div id="messages"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="text-input-container">
+                <input type="text" id="text-input" placeholder="Введите команду...">
+                <button id="send-button" class="send-btn">Отправить</button>
+            </div>
+            
+            <button id="mic-button" class="mic-btn">
+                <span class="mic-icon">🎤</span>
+            </button>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
