@@ -14,6 +14,10 @@ public class Main {
         // Инициализируем базу данных
         DatabaseService database = new DatabaseService();
         
+        // Передаем DatabaseService в команды памяти
+        RememberCommand.setDatabase(database);
+        ReadMemoryCommand.setDatabase(database);
+        
         // Запускаем мониторинг системы
         SystemMonitorService systemMonitor = new SystemMonitorService();
         systemMonitor.startMonitoring();
