@@ -16,6 +16,7 @@ import com.assistant.commands.GoogleSearchCommand;
 import com.assistant.commands.OpenNotepadCommand;
 import com.assistant.commands.RememberCommand;
 import com.assistant.commands.ReadMemoryCommand;
+import com.assistant.commands.ScreenshotCommand;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
@@ -34,6 +35,7 @@ public class Main {
         commandManager.register("блокнот", new OpenNotepadCommand());
         commandManager.register("запомни", new RememberCommand());
         commandManager.register("вспомни", new ReadMemoryCommand());
+        commandManager.register("скриншот", new ScreenshotCommand());
         // GeminiCommand больше не нужен - Gemini теперь встроен в CommandManager
         
         Gson gson = new Gson();
