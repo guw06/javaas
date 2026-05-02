@@ -21,7 +21,7 @@ public class ReadMemoryCommand implements Command {
         List<String> notes = database.getAllNotes();
         
         if (notes == null || notes.isEmpty()) {
-            return "Я ничего не помню. Скажите 'запомни что-то', чтобы я сохранил";
+            return "Моя память пуста";
         }
         
         // Форматируем вывод

@@ -25,6 +25,6 @@ public class RememberCommand implements Command {
         // Сохраняем заметку в базу данных
         database.saveNote(text);
         
-        return "Я запомнил: " + text;
+        return "Сохранил в базу данных: " + text;
     }
 }
