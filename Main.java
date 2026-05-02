@@ -11,6 +11,11 @@ import com.assistant.commands.JokeCommand;
 import com.assistant.commands.CatFactCommand;
 import com.assistant.commands.NewsCommand;
 import com.assistant.commands.CurrencyCommand;
+import com.assistant.commands.OpenBrowserCommand;
+import com.assistant.commands.GoogleSearchCommand;
+import com.assistant.commands.OpenNotepadCommand;
+import com.assistant.commands.RememberCommand;
+import com.assistant.commands.ReadMemoryCommand;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
@@ -24,6 +29,11 @@ public class Main {
         commandManager.register("факт", new CatFactCommand());
         commandManager.register("новости", new NewsCommand());
         commandManager.register("валюта", new CurrencyCommand());
+        commandManager.register("браузер", new OpenBrowserCommand());
+        commandManager.register("найди", new GoogleSearchCommand());
+        commandManager.register("блокнот", new OpenNotepadCommand());
+        commandManager.register("запомни", new RememberCommand());
+        commandManager.register("вспомни", new ReadMemoryCommand());
         
         Gson gson = new Gson();
         
