@@ -1,6 +1,8 @@
 package com.assistant.services;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseService {
     private static final String DB_URL = "jdbc:sqlite:jarvis.db";
@@ -12,8 +14,8 @@ public class DatabaseService {
             connection = DriverManager.getConnection(DB_URL);
             System.out.println("✅ Подключение к базе данных установлено: jarvis.db");
             
-            // Создаем таблицу memory если она не существует
-            createTable();
+            // Создаем таблицы если они не существуют
+            createTables();
             
         } catch (SQLException e) {
             System.err.println("❌ Ошибка при подключении к базе данных: " + e.getMessage());
@@ -22,149 +24,171 @@ public class DatabaseService {
     }
     
     /**
-     * Создает таблицу memory если она не существует
+     * Создает таблицы memory и history если они не существуют
      */
-    private void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS memory (" +
-                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                     "key_name TEXT UNIQUE NOT NULL, " +
-                     "value_text TEXT NOT NULL)";
+    private void createTables() {
+        // Таблица для заметок
+        String createMemoryTable = "CREATE TABLE IF NOT EXISTS memory (" +
+                                   "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                                   "note TEXT NOT NULL)";
+        
+        // Таблица для истории диалогов
+        String createHistoryTable = "CREATE TABLE IF NOT EXISTS history (" +
+                                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                                    "user_request TEXT NOT NULL, " +
+                                    "ai_response TEXT NOT NULL, " +
+                                    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)";
         
         try (Statement stmt = connection.createStatement()) {
-            stmt.execute(sql);
+            stmt.execute(createMemoryTable);
             System.out.println("✅ Таблица memory готова к использованию");
+            
+            stmt.execute(createHistoryTable);
+            System.out.println("✅ Таблица history готова к использованию");
+            
         } catch (SQLException e) {
-            System.err.println("❌ Ошибка при создании таблицы: " + e.getMessage());
+            System.err.println("❌ Ошибка при создании таблиц: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * Сохраняет пару ключ-значение в базу данных
-     * Если ключ уже существует, значение обновляется
+     * Сохраняет заметку в таблицу memory
      * 
-     * @param key ключ для сохранения
-     * @param value значение для сохранения
+     * @param text текст заметки
      */
-    public void save(String key, String value) {
-        if (key == null || key.trim().isEmpty()) {
-            System.err.println("⚠️ Ключ не может быть пустым");
+    public void saveNote(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            System.err.println("⚠️ Текст заметки не может быть пустым");
             return;
         }
         
-        if (value == null) {
-            value = "";
-        }
-        
-        String sql = "INSERT OR REPLACE INTO memory (key_name, value_text) VALUES (?, ?)";
+        String sql = "INSERT INTO memory (note) VALUES (?)";
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, key.trim());
-            pstmt.setString(2, value);
+            pstmt.setString(1, text);
             pstmt.executeUpdate();
-            System.out.println("💾 Сохранено: " + key + " = " + value);
+            System.out.println("💾 Заметка сохранена: " + text);
         } catch (SQLException e) {
-            System.err.println("❌ Ошибка при сохранении данных: " + e.getMessage());
+            System.err.println("❌ Ошибка при сохранении заметки: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * Получает значение по ключу из базы данных
+     * Получает все заметки из таблицы memory
      * 
-     * @param key ключ для поиска
-     * @return значение или null если ключ не найден
+     * @return список всех заметок
      */
-    public String get(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            System.err.println("⚠️ Ключ не может быть пустым");
-            return null;
-        }
-        
-        String sql = "SELECT value_text FROM memory WHERE key_name = ?";
-        
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, key.trim());
-            ResultSet rs = pstmt.executeQuery();
-            
-            if (rs.next()) {
-                String value = rs.getString("value_text");
-                System.out.println("📖 Прочитано: " + key + " = " + value);
-                return value;
-            } else {
-                System.out.println("🔍 Ключ не найден: " + key);
-                return null;
-            }
-        } catch (SQLException e) {
-            System.err.println("❌ Ошибка при чтении данных: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-    
-    /**
-     * Удаляет запись по ключу
-     * 
-     * @param key ключ для удаления
-     * @return true если запись была удалена
-     */
-    public boolean delete(String key) {
-        if (key == null || key.trim().isEmpty()) {
-            System.err.println("⚠️ Ключ не может быть пустым");
-            return false;
-        }
-        
-        String sql = "DELETE FROM memory WHERE key_name = ?";
-        
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, key.trim());
-            int rowsAffected = pstmt.executeUpdate();
-            
-            if (rowsAffected > 0) {
-                System.out.println("🗑️ Удалено: " + key);
-                return true;
-            } else {
-                System.out.println("🔍 Ключ не найден для удаления: " + key);
-                return false;
-            }
-        } catch (SQLException e) {
-            System.err.println("❌ Ошибка при удалении данных: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Получает все записи из базы данных
-     * 
-     * @return строка со всеми записями
-     */
-    public String getAll() {
-        String sql = "SELECT key_name, value_text FROM memory ORDER BY id";
-        StringBuilder result = new StringBuilder();
+    public List<String> getAllNotes() {
+        List<String> notes = new ArrayList<>();
+        String sql = "SELECT note FROM memory ORDER BY id";
         
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
-            int count = 0;
             while (rs.next()) {
-                String key = rs.getString("key_name");
-                String value = rs.getString("value_text");
-                result.append(key).append(": ").append(value).append("\n");
-                count++;
+                String note = rs.getString("note");
+                notes.add(note);
             }
             
-            if (count == 0) {
-                return "База данных пуста";
-            }
-            
-            System.out.println("📚 Прочитано записей: " + count);
-            return result.toString().trim();
+            System.out.println("📚 Прочитано заметок: " + notes.size());
             
         } catch (SQLException e) {
-            System.err.println("❌ Ошибка при чтении всех данных: " + e.getMessage());
+            System.err.println("❌ Ошибка при чтении заметок: " + e.getMessage());
             e.printStackTrace();
-            return "Ошибка при чтении базы данных";
+        }
+        
+        return notes;
+    }
+    
+    /**
+     * Сохраняет запись в историю диалогов
+     * 
+     * @param userRequest запрос пользователя
+     * @param aiResponse ответ ассистента
+     */
+    public void saveHistory(String userRequest, String aiResponse) {
+        if (userRequest == null || aiResponse == null) {
+            System.err.println("⚠️ Запрос и ответ не могут быть null");
+            return;
+        }
+        
+        String sql = "INSERT INTO history (user_request, ai_response) VALUES (?, ?)";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, userRequest);
+            pstmt.setString(2, aiResponse);
+            pstmt.executeUpdate();
+            System.out.println("📝 История сохранена");
+        } catch (SQLException e) {
+            System.err.println("❌ Ошибка при сохранении истории: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Получает последние N записей из истории
+     * 
+     * @param limit количество записей
+     * @return список записей истории
+     */
+    public List<String> getHistory(int limit) {
+        List<String> history = new ArrayList<>();
+        String sql = "SELECT user_request, ai_response, timestamp FROM history " +
+                     "ORDER BY id DESC LIMIT ?";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, limit);
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                String userRequest = rs.getString("user_request");
+                String aiResponse = rs.getString("ai_response");
+                String timestamp = rs.getString("timestamp");
+                
+                String record = String.format("[%s]\nВы: %s\nАссистент: %s",
+                                            timestamp, userRequest, aiResponse);
+                history.add(record);
+            }
+            
+            System.out.println("📖 Прочитано записей истории: " + history.size());
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Ошибка при чтении истории: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return history;
+    }
+    
+    /**
+     * Удаляет все заметки из таблицы memory
+     */
+    public void clearNotes() {
+        String sql = "DELETE FROM memory";
+        
+        try (Statement stmt = connection.createStatement()) {
+            int deleted = stmt.executeUpdate(sql);
+            System.out.println("🗑️ Удалено заметок: " + deleted);
+        } catch (SQLException e) {
+            System.err.println("❌ Ошибка при удалении заметок: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Удаляет всю историю диалогов
+     */
+    public void clearHistory() {
+        String sql = "DELETE FROM history";
+        
+        try (Statement stmt = connection.createStatement()) {
+            int deleted = stmt.executeUpdate(sql);
+            System.out.println("🗑️ Удалено записей истории: " + deleted);
+        } catch (SQLException e) {
+            System.err.println("❌ Ошибка при удалении истории: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     

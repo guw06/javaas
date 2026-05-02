@@ -1,8 +1,6 @@
 package com.assistant.commands;
 
 import com.assistant.services.DatabaseService;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class RememberCommand implements Command {
     private static DatabaseService database;
@@ -24,13 +22,8 @@ public class RememberCommand implements Command {
             return "Что мне запомнить?";
         }
         
-        // Генерируем уникальный ключ с временной меткой
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String key = "note_" + System.currentTimeMillis();
-        String valueWithTimestamp = "[" + timestamp + "] " + text;
-        
-        // Сохраняем в базу данных
-        database.save(key, valueWithTimestamp);
+        // Сохраняем заметку в базу данных
+        database.saveNote(text);
         
         return "Я запомнил: " + text;
     }
