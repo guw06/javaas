@@ -15,12 +15,16 @@ C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\WeatherComm
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\DateCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\services\DatabaseService.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\ReadMemoryCommand.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\HelpCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\OpenBrowserCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\CommandManager.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\JokeCommand.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\HistoryCommand.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\CalculatorCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\GeminiCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\ScreenshotCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\NewsCommand.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\ClearMemoryCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\models\RequestDto.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\GoogleSearchCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\RememberCommand.java
