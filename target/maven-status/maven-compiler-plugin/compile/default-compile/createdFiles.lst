@@ -3,7 +3,6 @@ com\assistant\commands\OpenNotepadCommand.class
 com\assistant\services\SystemMonitorService.class
 com\assistant\commands\JokeCommand.class
 com\assistant\services\GeminiService.class
-Main$1.class
 com\assistant\commands\HelloCommand.class
 com\assistant\commands\ClipboardCommand.class
 com\assistant\commands\OpenBrowserCommand.class

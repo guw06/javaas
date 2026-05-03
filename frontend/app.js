@@ -1,226 +1,252 @@
-// Инициализация Web Speech API
+// ===== Web Speech API — голос Джарвиса =====
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
-let continuousMode = false; // Режим постоянной прослушки
-const wakeWords = ['джарвис', 'алиса', 'ассистент']; // Ключевые слова активации
+let continuousMode = false;
+const wakeWords = ['джарвис', 'алиса', 'ассистент'];
+
+// Голосовые настройки
+let voiceSettings = {
+    voice: null,
+    rate: 1.0,
+    pitch: 1.0,
+    volume: 1.0
+};
+
+// Audio контекст для визуализации
+let audioContext = null;
+let analyser = null;
+let visualizerAnimId = null;
 
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
-    recognition.continuous = false; // По умолчанию выключено
+    recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 } else {
-    console.error('Web Speech API не поддерживается в этом браузере');
+    console.warn('Web Speech API не поддерживается');
 }
 
+// ===== Отправка команды на backend =====
 async function sendCommandToBackend(text) {
     try {
-        const response = await fetch('http://localhost:8080/api/command', {
+        const response = await fetch('/api/command', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text: text })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
         });
-
-        if (!response.ok) {
-            throw new Error('Ошибка сети: ' + response.status);
-        }
-
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         return data.response;
     } catch (error) {
-        console.error('Ошибка при отправке команды:', error);
+        console.error('Ошибка:', error);
         return 'Ошибка связи с сервером';
     }
 }
 
-// Функция синтеза речи
+// ===== Синтез речи (TTS) =====
 function speak(text) {
-    if (!window.speechSynthesis) {
-        console.error('Speech Synthesis API не поддерживается в этом браузере');
-        return;
-    }
-
-    // Останавливаем предыдущую речь, если она есть
+    if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
-    utterance.rate = 1.0; // Скорость речи
-    utterance.pitch = 1.0; // Высота тона
-    utterance.volume = 1.0; // Громкость
+    utterance.rate = voiceSettings.rate;
+    utterance.pitch = voiceSettings.pitch;
+    utterance.volume = voiceSettings.volume;
+    if (voiceSettings.voice) utterance.voice = voiceSettings.voice;
 
-    utterance.onstart = function() {
-        console.log('Начало озвучивания');
+    utterance.onstart = () => {
+        document.getElementById('mic-button')?.classList.add('speaking');
     };
-
-    utterance.onend = function() {
-        console.log('Озвучивание завершено');
-    };
-
-    utterance.onerror = function(event) {
-        console.error('Ошибка озвучивания:', event.error);
+    utterance.onend = () => {
+        document.getElementById('mic-button')?.classList.remove('speaking');
     };
 
     window.speechSynthesis.speak(utterance);
 }
-
-// Экспортируем функцию для использования в script.js
 window.speak = speak;
 
+// ===== Загрузка доступных голосов =====
+function loadVoices() {
+    const voices = window.speechSynthesis?.getVoices() || [];
+    const select = document.getElementById('voice-select');
+    if (!select) return;
+    select.innerHTML = '';
 
-// Функция для запуска распознавания речи
-function startVoiceRecognition() {
-    if (!recognition) {
-        alert('Распознавание речи не поддерживается в вашем браузере');
-        return;
+    const ruVoices = voices.filter(v => v.lang.startsWith('ru'));
+    const allVoices = ruVoices.length > 0 ? ruVoices : voices;
+
+    allVoices.forEach((voice, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${voice.name} (${voice.lang})`;
+        if (voice.default) opt.selected = true;
+        select.appendChild(opt);
+    });
+
+    if (allVoices.length > 0 && !voiceSettings.voice) {
+        voiceSettings.voice = allVoices[0];
     }
 
-    try {
-        recognition.start();
-        console.log('Распознавание речи запущено');
-    } catch (error) {
-        console.error('Ошибка при запуске распознавания:', error);
-    }
+    select.addEventListener('change', () => {
+        voiceSettings.voice = allVoices[parseInt(select.value)] || null;
+    });
+}
+if (window.speechSynthesis) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
 }
 
-// Функция для переключения режима постоянной прослушки
-function toggleContinuousMode() {
-    if (!recognition) {
-        alert('Распознавание речи не поддерживается в вашем браузере');
-        return false;
-    }
+// ===== Распознавание речи =====
+function startVoiceRecognition() {
+    if (!recognition) { alert('Распознавание речи не поддерживается'); return; }
+    try { recognition.start(); } catch (e) { console.error(e); }
+}
 
+function toggleContinuousMode() {
+    if (!recognition) return false;
     continuousMode = !continuousMode;
     recognition.continuous = continuousMode;
-    
-    const micButton = document.getElementById('mic-button');
-    
+    const mic = document.getElementById('mic-button');
+    const badge = document.getElementById('mode-badge');
+
     if (continuousMode) {
-        console.log('Режим постоянной прослушки ВКЛЮЧЕН');
-        console.log('Используйте wake words:', wakeWords.join(', '));
-        try {
-            recognition.start();
-            if (micButton) {
-                micButton.classList.add('listening');
-                micButton.classList.add('continuous-mode');
-            }
-            // Обновляем индикатор режима
-            if (window.updateModeIndicator) {
-                window.updateModeIndicator(true);
-            }
-        } catch (error) {
-            console.error('Ошибка при запуске continuous режима:', error);
-        }
+        try { recognition.start(); } catch (e) {}
+        mic?.classList.add('continuous');
+        badge?.classList.add('active');
     } else {
-        console.log('Режим постоянной прослушки ВЫКЛЮЧЕН');
-        try {
-            recognition.stop();
-            if (micButton) {
-                micButton.classList.remove('listening');
-                micButton.classList.remove('continuous-mode');
-            }
-            // Обновляем индикатор режима
-            if (window.updateModeIndicator) {
-                window.updateModeIndicator(false);
-            }
-        } catch (error) {
-            console.error('Ошибка при остановке:', error);
-        }
+        try { recognition.stop(); } catch (e) {}
+        mic?.classList.remove('continuous', 'listening');
+        badge?.classList.remove('active');
     }
-    
     return continuousMode;
 }
 
-// Обработчики событий распознавания речи
 if (recognition) {
-    recognition.onstart = function() {
-        console.log('Слушаю...');
-        const micButton = document.getElementById('mic-button');
-        if (micButton) {
-            micButton.classList.add('listening');
-        }
+    recognition.onstart = () => {
+        document.getElementById('mic-button')?.classList.add('listening');
+        startVisualizer();
     };
 
-    recognition.onresult = function(event) {
+    recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        console.log('Распознано:', transcript);
-        
-        // Проверяем наличие wake word
-        const lowerTranscript = transcript.toLowerCase();
+        const lower = transcript.toLowerCase();
         let commandText = transcript;
-        let hasWakeWord = false;
-        
-        for (const wakeWord of wakeWords) {
-            if (lowerTranscript.includes(wakeWord)) {
-                hasWakeWord = true;
-                // Вырезаем wake word из текста
-                const regex = new RegExp(wakeWord, 'gi');
-                commandText = transcript.replace(regex, '').trim();
-                console.log('Wake word обнаружен:', wakeWord);
-                console.log('Команда после обработки:', commandText);
+        let hasWake = false;
+
+        for (const ww of wakeWords) {
+            if (lower.includes(ww)) {
+                hasWake = true;
+                commandText = transcript.replace(new RegExp(ww, 'gi'), '').trim();
                 break;
             }
         }
-        
-        // В режиме постоянной прослушки обрабатываем только команды с wake word
-        if (continuousMode && !hasWakeWord) {
-            console.log('Wake word не обнаружен, игнорируем');
-            return;
-        }
-        
-        // Если команда пустая после удаления wake word, не отправляем
-        if (!commandText || commandText.trim() === '') {
-            console.log('Команда пустая после удаления wake word');
-            return;
-        }
-        
-        // Отправляем команду
-        const textInput = document.getElementById('text-input');
-        if (textInput) {
-            textInput.value = commandText;
-        }
-        
-        // Автоматически отправляем команду
-        if (window.handleSendCommand) {
-            window.handleSendCommand();
-        }
+
+        if (continuousMode && !hasWake) return;
+        if (!commandText.trim()) return;
+
+        const input = document.getElementById('text-input');
+        if (input) input.value = commandText;
+        if (window.handleSendCommand) window.handleSendCommand();
     };
 
-    recognition.onerror = function(event) {
-        console.error('Ошибка распознавания:', event.error);
-        const micButton = document.getElementById('mic-button');
-        if (micButton) {
-            micButton.classList.remove('listening');
-        }
+    recognition.onerror = () => {
+        document.getElementById('mic-button')?.classList.remove('listening');
+        stopVisualizer();
     };
 
-    recognition.onend = function() {
-        console.log('Распознавание завершено');
-        const micButton = document.getElementById('mic-button');
-        
-        // В режиме постоянной прослушки автоматически перезапускаем
+    recognition.onend = () => {
         if (continuousMode) {
-            try {
-                recognition.start();
-                console.log('Перезапуск распознавания в continuous режиме');
-            } catch (error) {
-                console.error('Ошибка при перезапуске:', error);
-                if (micButton) {
-                    micButton.classList.remove('listening');
-                }
+            try { recognition.start(); } catch (e) {
+                document.getElementById('mic-button')?.classList.remove('listening');
+                stopVisualizer();
             }
         } else {
-            if (micButton) {
-                micButton.classList.remove('listening');
-            }
+            document.getElementById('mic-button')?.classList.remove('listening');
+            stopVisualizer();
         }
     };
 }
 
+// ===== Audio Visualizer =====
+function startVisualizer() {
+    const canvas = document.getElementById('audio-visualizer');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
 
-// Экспортируем функции для использования в script.js
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 64;
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                drawVisualizer(ctx, canvas);
+            }).catch(() => drawFakeVisualizer(ctx, canvas));
+        } catch (e) { drawFakeVisualizer(ctx, canvas); }
+    } else {
+        drawVisualizer(ctx, canvas);
+    }
+}
+
+function drawVisualizer(ctx, canvas) {
+    if (!analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+
+    function draw() {
+        visualizerAnimId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(data);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const bars = data.length;
+        const barW = canvas.width / bars;
+        const midY = canvas.height / 2;
+
+        for (let i = 0; i < bars; i++) {
+            const val = data[i] / 255;
+            const h = val * midY * 0.9;
+            const x = i * barW;
+            ctx.fillStyle = `rgba(0, 212, 255, ${0.3 + val * 0.7})`;
+            ctx.fillRect(x, midY - h, barW - 1, h * 2);
+        }
+    }
+    draw();
+}
+
+function drawFakeVisualizer(ctx, canvas) {
+    function draw() {
+        visualizerAnimId = requestAnimationFrame(draw);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bars = 16;
+        const barW = canvas.width / bars;
+        const midY = canvas.height / 2;
+        const t = Date.now() / 1000;
+
+        for (let i = 0; i < bars; i++) {
+            const val = 0.2 + Math.sin(t * 3 + i * 0.5) * 0.3 + Math.random() * 0.1;
+            const h = val * midY * 0.8;
+            ctx.fillStyle = `rgba(0, 212, 255, ${0.2 + val * 0.5})`;
+            ctx.fillRect(i * barW, midY - h, barW - 2, h * 2);
+        }
+    }
+    draw();
+}
+
+function stopVisualizer() {
+    if (visualizerAnimId) {
+        cancelAnimationFrame(visualizerAnimId);
+        visualizerAnimId = null;
+    }
+    const canvas = document.getElementById('audio-visualizer');
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ===== Exports =====
 window.startVoiceRecognition = startVoiceRecognition;
 window.toggleContinuousMode = toggleContinuousMode;
+window.voiceSettings = voiceSettings;
+window.loadVoices = loadVoices;

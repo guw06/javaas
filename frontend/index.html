@@ -3,42 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Голосовой ассистент с искусственным интеллектом">
-    <title>Голосовой Ассистент</title>
+    <meta name="description" content="J.A.R.V.I.S. — Персональный голосовой ИИ-ассистент с искусственным интеллектом">
+    <title>J.A.R.V.I.S. — AI Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Статус подключения -->
-    <div id="connection-status" class="connection-status online">
-        <span id="status-text">Подключено</span>
-    </div>
-    
-    <!-- Индикатор режима -->
-    <div id="mode-indicator" class="mode-indicator">
-        🎯 Режим постоянной прослушки
-    </div>
-    <div class="container">
-        <h1>Голосовой Ассистент</h1>
-        
-        <div id="chat-container">
-            <div id="messages"></div>
-        </div>
-        
-        <div class="controls">
-            <div class="text-input-container">
-                <input type="text" id="text-input" placeholder="Введите команду...">
-                <button id="send-button" class="send-btn">Отправить</button>
+    <!-- Загрузочный экран -->
+    <div id="boot-screen" class="boot-screen">
+        <div class="boot-content">
+            <div class="boot-reactor">
+                <div class="boot-ring ring-1"></div>
+                <div class="boot-ring ring-2"></div>
+                <div class="boot-ring ring-3"></div>
+                <div class="boot-core"></div>
             </div>
-            
-            <button id="mic-button" class="mic-btn">
-                <span class="mic-icon">🎤</span>
-            </button>
+            <div class="boot-text">
+                <div class="boot-title">J.A.R.V.I.S.</div>
+                <div class="boot-subtitle" id="boot-status">Инициализация систем...</div>
+                <div class="boot-progress">
+                    <div class="boot-progress-bar" id="boot-progress-bar"></div>
+                </div>
+            </div>
         </div>
     </div>
-    
+
+    <!-- Основной интерфейс -->
+    <div id="main-ui" class="main-ui hidden">
+        <!-- Фоновые частицы -->
+        <canvas id="particles-canvas" class="particles-canvas"></canvas>
+        
+        <!-- HUD элементы -->
+        <div class="hud-corners">
+            <div class="hud-corner top-left"></div>
+            <div class="hud-corner top-right"></div>
+            <div class="hud-corner bottom-left"></div>
+            <div class="hud-corner bottom-right"></div>
+        </div>
+
+        <!-- Верхняя панель -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <div id="connection-status" class="status-badge online">
+                    <span class="status-dot"></span>
+                    <span id="status-text">ONLINE</span>
+                </div>
+                <div class="system-info">
+                    <span id="system-time" class="sys-info-item">00:00:00</span>
+                    <span class="sys-divider">|</span>
+                    <span id="system-mem" class="sys-info-item">MEM: --</span>
+                </div>
+            </div>
+            <div class="top-bar-center">
+                <h1 class="jarvis-title">
+                    <span class="title-letter" style="animation-delay: 0s">J</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.05s">A</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.1s">R</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.15s">V</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.2s">I</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.25s">S</span><span class="title-dot">.</span>
+                </h1>
+            </div>
+            <div class="top-bar-right">
+                <button id="settings-toggle" class="hud-btn" title="Настройки">⚙</button>
+                <button id="history-toggle" class="hud-btn" title="История">📋</button>
+                <button id="voice-toggle" class="hud-btn active" title="Озвучивание">🔊</button>
+            </div>
+        </header>
+
+        <!-- Панель настроек -->
+        <div id="settings-panel" class="side-panel settings-panel">
+            <div class="panel-header">
+                <h3>⚙ Настройки голоса</h3>
+                <button class="panel-close" data-panel="settings-panel">✕</button>
+            </div>
+            <div class="panel-content">
+                <div class="setting-group">
+                    <label>Голос</label>
+                    <select id="voice-select" class="hud-select"></select>
+                </div>
+                <div class="setting-group">
+                    <label>Скорость: <span id="rate-value">1.0</span></label>
+                    <input type="range" id="voice-rate" class="hud-range" min="0.5" max="2" step="0.1" value="1.0">
+                </div>
+                <div class="setting-group">
+                    <label>Тон: <span id="pitch-value">1.0</span></label>
+                    <input type="range" id="voice-pitch" class="hud-range" min="0.5" max="2" step="0.1" value="1.0">
+                </div>
+                <div class="setting-group">
+                    <label>Громкость: <span id="volume-value">1.0</span></label>
+                    <input type="range" id="voice-volume" class="hud-range" min="0" max="1" step="0.1" value="1.0">
+                </div>
+                <button id="test-voice" class="hud-action-btn">🔊 Тест голоса</button>
+            </div>
+        </div>
+
+        <!-- Панель команд -->
+        <div id="commands-panel" class="side-panel commands-panel">
+            <div class="panel-header">
+                <h3>📋 Команды</h3>
+                <button class="panel-close" data-panel="commands-panel">✕</button>
+            </div>
+            <div class="panel-content">
+                <div class="command-category">
+                    <h4>🎯 Системные</h4>
+                    <div class="command-list">
+                        <div class="command-item" data-cmd="привет">👋 привет</div>
+                        <div class="command-item" data-cmd="время">⏰ время</div>
+                        <div class="command-item" data-cmd="дата">📅 дата</div>
+                        <div class="command-item" data-cmd="погода">🌤️ погода</div>
+                        <div class="command-item" data-cmd="статистика">📊 статистика</div>
+                    </div>
+                </div>
+                <div class="command-category">
+                    <h4>🌐 Интернет</h4>
+                    <div class="command-list">
+                        <div class="command-item" data-cmd="новости">📰 новости</div>
+                        <div class="command-item" data-cmd="валюта">💱 валюта</div>
+                        <div class="command-item" data-cmd="шутка">😂 шутка</div>
+                        <div class="command-item" data-cmd="факт">🐱 факт</div>
+                    </div>
+                </div>
+                <div class="command-category">
+                    <h4>💻 Система</h4>
+                    <div class="command-list">
+                        <div class="command-item" data-cmd="блокнот">🗒️ блокнот</div>
+                        <div class="command-item" data-cmd="скриншот">📸 скриншот</div>
+                        <div class="command-item" data-cmd="буфер">📋 буфер</div>
+                        <div class="command-item" data-cmd="найди Java">🔍 найди ...</div>
+                    </div>
+                </div>
+                <div class="command-category">
+                    <h4>🧠 Память</h4>
+                    <div class="command-list">
+                        <div class="command-item" data-cmd="запомни встреча в 15:00">💾 запомни ...</div>
+                        <div class="command-item" data-cmd="вспомни">📝 вспомни</div>
+                    </div>
+                </div>
+                <div class="command-category">
+                    <h4>🤖 Gemini AI</h4>
+                    <p class="command-hint">Любой вопрос автоматически идёт в ИИ</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Центральная область -->
+        <main class="main-content">
+            <!-- Чат -->
+            <div id="chat-container" class="chat-container">
+                <div id="messages" class="messages"></div>
+            </div>
+
+            <!-- Центральный реактор + микрофон -->
+            <div class="reactor-section">
+                <!-- Audio визуализация -->
+                <canvas id="audio-visualizer" class="audio-visualizer"></canvas>
+                
+                <!-- Кнопка микрофона как Arc Reactor -->
+                <button id="mic-button" class="reactor-btn" title="Клик — голос | Двойной клик — постоянная прослушка">
+                    <div class="reactor-ring ring-outer"></div>
+                    <div class="reactor-ring ring-middle"></div>
+                    <div class="reactor-ring ring-inner"></div>
+                    <div class="reactor-core">
+                        <span class="mic-icon">🎤</span>
+                    </div>
+                </button>
+                
+                <div id="mode-badge" class="mode-badge">
+                    <span class="mode-dot"></span>
+                    <span id="mode-text">WAKE WORD MODE</span>
+                </div>
+            </div>
+
+            <!-- Поле ввода -->
+            <div class="input-section">
+                <div class="input-wrapper">
+                    <div class="input-glow"></div>
+                    <input type="text" id="text-input" placeholder="Введите команду или задайте вопрос..." autocomplete="off">
+                    <button id="send-button" class="send-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-hints">
+                    <button class="hint-chip" data-cmd="привет">привет</button>
+                    <button class="hint-chip" data-cmd="погода">погода</button>
+                    <button class="hint-chip" data-cmd="время">время</button>
+                    <button class="hint-chip" data-cmd="шутка">шутка</button>
+                    <button class="hint-chip" data-cmd="новости">новости</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
     <script src="app.js"></script>
     <script src="script.js"></script>
 </body>

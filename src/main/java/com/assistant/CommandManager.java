@@ -4,6 +4,7 @@ import com.assistant.commands.Command;
 import com.assistant.services.GeminiService;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class CommandManager {
     private Map<String, Command> commands = new HashMap<>();
@@ -15,6 +16,20 @@ public class CommandManager {
 
     public void register(String keyword, Command command) {
         commands.put(keyword, command);
+    }
+
+    /**
+     * Возвращает количество зарегистрированных команд
+     */
+    public int getCommandCount() {
+        return commands.size();
+    }
+
+    /**
+     * Возвращает список зарегистрированных ключевых слов
+     */
+    public Set<String> getKeywords() {
+        return commands.keySet();
     }
 
     public String process(String input) {
@@ -34,6 +49,10 @@ public class CommandManager {
         
         // Если системная команда не найдена - отправляем в Gemini
         System.out.println("Системная команда не найдена, отправляем в Gemini: " + input);
-        return geminiService.ask(input);
+        try {
+            return geminiService.ask(input);
+        } catch (Exception e) {
+            return "Команда не распознана. Доступные команды: привет, время, дата, погода, шутка, факт, новости, валюта, браузер, найди, блокнот, запомни что, вспомни, скриншот, буфер, статистика";
+        }
     }
 }
