@@ -49,9 +49,9 @@ public class WordDocumentService {
         try {
             Path output = uniquePath(defaultDirectory.resolve(request.fileName()).toAbsolutePath().normalize());
             createDocx(output, request.content());
-            return "Word-документ создан: " + output;
+            return "Готово, создала Word-документ " + describePath(output) + ".";
         } catch (Exception e) {
-            return "Не удалось создать Word-документ: " + e.getMessage();
+            return "Не смогла создать Word-документ. Проверь, пожалуйста, доступ к папке.";
         }
     }
 
@@ -193,6 +193,29 @@ public class WordDocumentService {
             return "aura_document_" + LocalDateTime.now().format(NAME_TIME);
         }
         return name.length() > 50 ? name.substring(0, 50) : name;
+    }
+
+    private String describePath(Path path) {
+        String name = path.getFileName() == null ? "документ" : path.getFileName().toString();
+        return "«" + name + "» " + describeLocation(path.getParent());
+    }
+
+    private String describeLocation(Path parent) {
+        if (parent == null) {
+            return "в выбранной папке";
+        }
+
+        Path normalized = parent.toAbsolutePath().normalize();
+        Path desktop = Path.of(System.getProperty("user.home")).resolve("Desktop").toAbsolutePath().normalize();
+        Path documents = Path.of(System.getProperty("user.home")).resolve("Documents").toAbsolutePath().normalize();
+
+        if (normalized.toString().equalsIgnoreCase(desktop.toString()) || normalized.startsWith(desktop)) {
+            return "на рабочем столе";
+        }
+        if (normalized.toString().equalsIgnoreCase(documents.toString()) || normalized.startsWith(documents)) {
+            return "в Документах";
+        }
+        return "в выбранной папке";
     }
 
     private String stripQuotes(String value) {

@@ -57,7 +57,7 @@ public class CommandManager {
 
     public String process(String input) {
         if (input == null || input.trim().isEmpty()) {
-            return "Вы ничего не сказали.";
+            return "Я слушаю. Напишите или скажите команду.";
         }
 
         String normalizedInput = normalizeText(input);
@@ -88,7 +88,7 @@ public class CommandManager {
             return geminiService.ask(smartAssistantService.buildFallbackPrompt(input));
         } catch (Exception e) {
             System.err.println("Gemini error: " + e.getMessage());
-            return "Не удалось обработать запрос. Попробуйте команду: помощь.";
+            return "Я не смогла разобрать запрос. Попробуйте сказать проще или напишите: помощь.";
         }
     }
 

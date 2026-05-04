@@ -15,7 +15,7 @@ public class GoogleSearchCommand implements Command {
             Desktop.getDesktop().browse(new URI("https://www.google.com/search?q=" + encodedQuery));
             return "Ищу информацию: " + query;
         } catch (Exception e) {
-            return "Не удалось выполнить поиск: " + e.getMessage();
+            return "Не смогла открыть поиск. Проверь, пожалуйста, браузер.";
         }
     }
 

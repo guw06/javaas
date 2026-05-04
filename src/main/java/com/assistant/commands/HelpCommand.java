@@ -46,7 +46,7 @@ public class HelpCommand implements Command {
         sb.append("  - создай папку project\n");
         sb.append("  - перемести \"notes.txt\" в \"archive\"\n");
         sb.append("  - удали файл notes.txt\n");
-        sb.append("Удаление безопасное: файлы переносятся в ~/.aura-trash.\n\n");
+        sb.append("Удаление безопасное: файлы уходят в корзину AURA.\n\n");
 
         sb.append("Word-документы:\n");
         sb.append("  - создай Word документ \"report.docx\" с текстом Привет\n");
@@ -63,7 +63,7 @@ public class HelpCommand implements Command {
         sb.append("  - вспомни\n");
         sb.append("  - история\n\n");
 
-        sb.append("Если команда не системная, AURA отправит вопрос в ИИ.");
+        sb.append("Если это обычный вопрос, AURA ответит через подключенную модель.");
         return sb.toString();
     }
 }

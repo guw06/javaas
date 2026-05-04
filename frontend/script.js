@@ -4,7 +4,7 @@ const sendButton = document.getElementById("send-button");
 const micButton = document.getElementById("mic-button");
 
 const ASSISTANT_NAME = "AURA";
-const STARTUP_GREETING = "Здравствуйте. Я AURA, ваш персональный ассистент. Система готова, я на связи.";
+const STARTUP_GREETING = "Привет. Я AURA. Я рядом, можешь говорить со мной обычными словами.";
 
 let voiceEnabled = true;
 let isOnline = false;
@@ -134,7 +134,7 @@ async function handleSendCommand() {
             ? "Нет интернет-соединения"
             : !isOnline
                 ? "Backend недоступен"
-                : "Не удалось обработать запрос";
+                : "Я не смогла обработать запрос";
         messagesContainer.appendChild(errDiv);
         scrollToBottom();
     } finally {
@@ -230,6 +230,8 @@ function setupVoiceControls() {
     const volumeEl = document.getElementById("voice-volume");
 
     if (rateEl) {
+        rateEl.value = window.voiceSettings.rate.toFixed(1);
+        document.getElementById("rate-value").textContent = rateEl.value;
         rateEl.addEventListener("input", () => {
             window.voiceSettings.rate = parseFloat(rateEl.value);
             document.getElementById("rate-value").textContent = rateEl.value;
@@ -237,6 +239,8 @@ function setupVoiceControls() {
     }
 
     if (pitchEl) {
+        pitchEl.value = window.voiceSettings.pitch.toFixed(1);
+        document.getElementById("pitch-value").textContent = pitchEl.value;
         pitchEl.addEventListener("input", () => {
             window.voiceSettings.pitch = parseFloat(pitchEl.value);
             document.getElementById("pitch-value").textContent = pitchEl.value;
@@ -251,7 +255,7 @@ function setupVoiceControls() {
     }
 
     document.getElementById("test-voice")?.addEventListener("click", () => {
-        if (window.speak) window.speak("Проверка голоса. AURA готова к работе.");
+        if (window.speak) window.speak("Привет. Я AURA. Так звучит мой новый голос.");
     });
 }
 

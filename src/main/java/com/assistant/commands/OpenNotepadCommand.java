@@ -16,9 +16,9 @@ public class OpenNotepadCommand implements Command {
 
         try {
             Runtime.getRuntime().exec("notepad.exe");
-            return "Блокнот запущен";
+            return "Открываю Блокнот.";
         } catch (Exception e) {
-            return "Не удалось запустить блокнот: " + e.getMessage();
+            return "Не смогла открыть Блокнот.";
         }
     }
 }

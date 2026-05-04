@@ -5,8 +5,8 @@ const wakeWords = ["аура", "джарвис", "ассистент", "алис
 
 let voiceSettings = {
     voice: null,
-    rate: 1.0,
-    pitch: 1.0,
+    rate: 0.92,
+    pitch: 1.16,
     volume: 1.0
 };
 
@@ -41,7 +41,7 @@ async function sendCommandToBackend(text) {
         return data.response;
     } catch (error) {
         console.error("Backend error:", error);
-        return "Не удалось связаться с сервером.";
+        return "Я потеряла связь с локальным сервером. Проверь, запущена ли AURA.";
     }
 }
 
@@ -50,7 +50,7 @@ function speak(text) {
 
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(cleanSpeechText(text));
     utterance.lang = "ru-RU";
     utterance.rate = voiceSettings.rate;
     utterance.pitch = voiceSettings.pitch;
@@ -70,13 +70,24 @@ function speak(text) {
 
 window.speak = speak;
 
+function cleanSpeechText(text) {
+    return String(text || "")
+        .replace(/https?:\/\/\S+/gi, "ссылку")
+        .replace(/\b[A-Z]:\\[^\n\r]+/gi, "файл")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function loadVoices() {
     const voices = window.speechSynthesis?.getVoices() || [];
     const select = document.getElementById("voice-select");
     if (!select) return;
 
     const ruVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("ru"));
-    const availableVoices = ruVoices.length > 0 ? ruVoices : voices;
+    const availableVoices = (ruVoices.length > 0 ? ruVoices : voices)
+        .slice()
+        .sort((a, b) => voiceScore(b) - voiceScore(a));
+    const savedVoiceName = localStorage.getItem("aura.voice.name");
 
     select.innerHTML = "";
     availableVoices.forEach((voice, index) => {
@@ -87,13 +98,41 @@ function loadVoices() {
         select.appendChild(option);
     });
 
-    if (availableVoices.length > 0 && !voiceSettings.voice) {
-        voiceSettings.voice = availableVoices[select.selectedIndex >= 0 ? select.selectedIndex : 0];
+    if (availableVoices.length > 0) {
+        const savedIndex = availableVoices.findIndex((voice) => voice.name === savedVoiceName);
+        const currentIndex = availableVoices.findIndex((voice) => voiceSettings.voice && voice.name === voiceSettings.voice.name);
+        const selectedIndex = savedIndex >= 0 ? savedIndex : currentIndex >= 0 ? currentIndex : 0;
+
+        select.value = String(selectedIndex);
+        voiceSettings.voice = availableVoices[selectedIndex];
     }
 
     select.onchange = () => {
         voiceSettings.voice = availableVoices[parseInt(select.value, 10)] || null;
+        if (voiceSettings.voice) {
+            localStorage.setItem("aura.voice.name", voiceSettings.voice.name);
+        }
     };
+}
+
+function voiceScore(voice) {
+    const name = voice.name.toLowerCase();
+    let score = voice.lang.toLowerCase().startsWith("ru") ? 100 : 0;
+
+    if (/svetlana|светлана|irina|ирина|milena|милена|oksana|оксана|alena|алена|elena|елена|daria|дарья|maria|мария|anna|анна|tatyana|татьяна|natasha|наташа/.test(name)) {
+        score += 90;
+    }
+    if (/female|жен/.test(name)) {
+        score += 40;
+    }
+    if (/pavel|павел|male|муж|david/.test(name)) {
+        score -= 80;
+    }
+    if (voice.localService) {
+        score += 5;
+    }
+
+    return score;
 }
 
 if (window.speechSynthesis) {

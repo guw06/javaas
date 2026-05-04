@@ -74,7 +74,7 @@ public class FileAutomationService {
 
             if (folder) {
                 Files.createDirectories(path);
-                return "Папка создана: " + path;
+                return "Готово, создала папку " + describePath(path) + ".";
             }
 
             Path parent = path.getParent();
@@ -82,13 +82,13 @@ public class FileAutomationService {
                 Files.createDirectories(parent);
             }
             if (Files.exists(path)) {
-                return "Файл уже существует: " + path;
+                return "Файл " + describePath(path) + " уже есть.";
             }
 
             Files.writeString(path, content, StandardCharsets.UTF_8);
-            return "Файл создан: " + path;
+            return "Готово, создала файл " + describePath(path) + ".";
         } catch (Exception e) {
-            return "Не удалось создать: " + e.getMessage();
+            return "Не смогла создать. Проверь имя и доступ к папке.";
         }
     }
 
@@ -103,7 +103,7 @@ public class FileAutomationService {
         try {
             Path path = resolveUserPath(pathText);
             if (!Files.exists(path)) {
-                return "Не нашел такой файл или папку: " + path;
+                return "Не нашла " + describePath(path) + ". Проверь имя файла или папки.";
             }
             if (!isSafeForDelete(path)) {
                 return "Не буду удалять системные папки, корневые папки и важные пользовательские директории.";
@@ -112,9 +112,9 @@ public class FileAutomationService {
             Files.createDirectories(trashDir);
             Path trashTarget = uniqueTrashTarget(path);
             Files.move(path, trashTarget, StandardCopyOption.REPLACE_EXISTING);
-            return "Перенесено в безопасную корзину AURA: " + trashTarget;
+            return "Готово, перенесла " + describePath(path) + " в безопасную корзину AURA.";
         } catch (Exception e) {
-            return "Не удалось удалить: " + e.getMessage();
+            return "Не смогла удалить. Возможно, файл открыт или нет доступа.";
         }
     }
 
@@ -141,7 +141,7 @@ public class FileAutomationService {
             Path destination = resolveUserPath(destinationText);
 
             if (!Files.exists(source)) {
-                return "Источник не найден: " + source;
+                return "Не нашла " + describePath(source) + ". Проверь имя исходного файла.";
             }
             if (!isSafeForWrite(source) || !isSafeForWrite(destination)) {
                 return "Не буду перемещать файлы в системные папки Windows.";
@@ -150,7 +150,7 @@ public class FileAutomationService {
                 destination = destination.resolve(source.getFileName()).normalize();
             }
             if (Files.exists(destination)) {
-                return "В месте назначения уже есть такой файл или папка: " + destination;
+                return "Там уже есть " + describePath(destination) + ".";
             }
 
             Path parent = destination.getParent();
@@ -158,9 +158,9 @@ public class FileAutomationService {
                 Files.createDirectories(parent);
             }
             Files.move(source, destination);
-            return "Переместил: " + source + " -> " + destination;
+            return "Готово, перенесла " + describePath(source) + " " + describeLocation(destination.getParent()) + ".";
         } catch (Exception e) {
-            return "Не удалось переместить: " + e.getMessage();
+            return "Не смогла переместить. Проверь, что файл не открыт и есть доступ к папке.";
         }
     }
 
@@ -268,6 +268,61 @@ public class FileAutomationService {
 
     private boolean equalsIgnoreCase(Path a, Path b) {
         return a.toString().equalsIgnoreCase(b.toString());
+    }
+
+    private String describePath(Path path) {
+        Path normalized = path.toAbsolutePath().normalize();
+        Path fileName = normalized.getFileName();
+        String name = fileName == null ? "элемент" : fileName.toString();
+        return "«" + name + "» " + describeLocation(normalized.getParent());
+    }
+
+    private String describeLocation(Path parent) {
+        if (parent == null) {
+            return "в выбранном месте";
+        }
+
+        Path normalized = parent.toAbsolutePath().normalize();
+        Path documents = userHome.resolve("Documents").toAbsolutePath().normalize();
+        Path downloads = userHome.resolve("Downloads").toAbsolutePath().normalize();
+
+        if (equalsIgnoreCase(normalized, defaultBase)) {
+            return "на рабочем столе";
+        }
+        if (startsWithIgnoreCase(normalized, defaultBase)) {
+            return "в папке " + describeChildFolder(defaultBase, normalized);
+        }
+        if (equalsIgnoreCase(normalized, documents)) {
+            return "в Документах";
+        }
+        if (startsWithIgnoreCase(normalized, documents)) {
+            return "в папке " + describeChildFolder(documents, normalized);
+        }
+        if (equalsIgnoreCase(normalized, downloads)) {
+            return "в Загрузках";
+        }
+        if (startsWithIgnoreCase(normalized, downloads)) {
+            return "в папке " + describeChildFolder(downloads, normalized);
+        }
+        if (equalsIgnoreCase(normalized, trashDir) || startsWithIgnoreCase(normalized, trashDir)) {
+            return "в безопасной корзине AURA";
+        }
+        if (startsWithIgnoreCase(normalized, userHome)) {
+            return "в вашей папке пользователя";
+        }
+        return "в выбранной папке";
+    }
+
+    private String describeChildFolder(Path base, Path value) {
+        try {
+            Path relative = base.relativize(value);
+            if (relative.getNameCount() > 0) {
+                return "«" + relative.getName(0) + "»";
+            }
+        } catch (Exception ignored) {
+            // Fall through to a generic human phrase.
+        }
+        return "«выбранная»";
     }
 
     private String stripQuotes(String value) {

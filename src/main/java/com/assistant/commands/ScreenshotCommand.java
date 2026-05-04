@@ -25,15 +25,15 @@ public class ScreenshotCommand implements Command {
             
             System.out.println("Скриншот сохранен: " + outputFile.getAbsolutePath());
             
-            return "Скриншот сохранен по пути: " + outputFile.getAbsolutePath();
+            return "Готово, сохранила скриншот как screenshot.png.";
             
         } catch (AWTException e) {
             System.err.println("Ошибка AWT при создании скриншота: " + e.getMessage());
-            return "Не удалось сделать скриншот: ошибка доступа к экрану";
+            return "Не смогла сделать скриншот: Windows не дала доступ к экрану.";
         } catch (Exception e) {
             System.err.println("Ошибка при создании скриншота: " + e.getMessage());
             e.printStackTrace();
-            return "Не удалось сделать скриншот";
+            return "Не смогла сделать скриншот.";
         }
     }
 }

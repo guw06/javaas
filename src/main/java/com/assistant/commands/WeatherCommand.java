@@ -9,6 +9,6 @@ public class WeatherCommand implements Command {
         if (response != null && !response.isEmpty()) {
             return response;
         }
-        return "Не удалось узнать погоду";
+        return "Не смогла узнать погоду. Проверь интернет и попробуй еще раз.";
     }
 }
