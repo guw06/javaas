@@ -2,6 +2,7 @@ package com.assistant.services;
 
 import com.assistant.commands.BrowserTabsCommand;
 import com.assistant.commands.CalculatorCommand;
+import com.assistant.commands.ComputerAgentCommand;
 import com.assistant.commands.FileControlCommand;
 import com.assistant.commands.NetworkControlCommand;
 import com.assistant.commands.NewsCommand;
@@ -19,6 +20,7 @@ public class SmartAssistantService {
     private static final Pattern MATH_PATTERN = Pattern.compile(".*\\d+\\s*([+\\-*/^]|плюс|минус|умнож|дели|процент|%).*\\d+.*", Pattern.CASE_INSENSITIVE);
 
     private final CalculatorCommand calculator = new CalculatorCommand();
+    private final ComputerAgentCommand computerAgent = new ComputerAgentCommand();
     private final ProblemSolverCommand problemSolver = new ProblemSolverCommand();
     private final WordDocumentCommand wordDocument = new WordDocumentCommand();
     private final SportsScoreCommand sports = new SportsScoreCommand();
@@ -36,6 +38,9 @@ public class SmartAssistantService {
             return Optional.empty();
         }
 
+        if (isAgentIntent(text)) {
+            return Optional.of(computerAgent.execute(input));
+        }
         if (isWordDocumentIntent(text)) {
             return Optional.of(wordDocument.execute(input));
         }
@@ -87,6 +92,18 @@ public class SmartAssistantService {
     private boolean isMathIntent(String text) {
         return containsAny(text, "посчитай", "вычисли", "рассчитай", "сколько будет", "калькулятор")
             || MATH_PATTERN.matcher(text).matches();
+    }
+
+    private boolean isAgentIntent(String text) {
+        if (containsAny(text, "агент", "agent mode", "ai agent", "автоматизируй", "сделай сама", "самостоятельно")) {
+            return true;
+        }
+        if (containsAny(text, "переименуй", "переименовать", "разложи", "организуй", "рассортируй")
+            && containsAny(text, "файл", "pdf", "пдф", "загрузк", "документ", "рабочий стол")) {
+            return true;
+        }
+        return containsAny(text, "найди все", "покажи все", "список всех")
+            && containsAny(text, "pdf", "пдф", "docx", "word", "jpg", "png", "txt", "загрузк", "документ");
     }
 
     private boolean isProblemSolvingIntent(String text) {

@@ -34,8 +34,10 @@ C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\NetworkCont
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\NewsCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\ClearMemoryCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\BrowserTabsCommand.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\services\ComputerAgentService.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\services\WindowsAutomationService.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\services\SmartAssistantService.java
+C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\ComputerAgentCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\models\RequestDto.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\GoogleSearchCommand.java
 C:\Users\dulatik\Desktop\javaas\src\main\java\com\assistant\commands\RememberCommand.java

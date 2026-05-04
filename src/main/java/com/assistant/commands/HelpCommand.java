@@ -52,6 +52,13 @@ public class HelpCommand implements Command {
         sb.append("  - создай Word документ \"report.docx\" с текстом Привет\n");
         sb.append("  - создай документ Word на тему искусственный интеллект\n\n");
 
+        sb.append("Agent mode:\n");
+        sb.append("  - агент найди все PDF в загрузках\n");
+        sb.append("  - агент найди все PDF в проекте\n");
+        sb.append("  - агент найди все PDF в загрузках и переименуй их по дате\n");
+        sb.append("  - агент разложи загрузки по типам\n");
+        sb.append("Пока agent mode работает безопасно: только пользовательские папки и без удаления.\n\n");
+
         sb.append("Мышление и задачи:\n");
         sb.append("  - посчитай 15 процентов от 240\n");
         sb.append("  - посчитай (12 + 8) * 3\n");
