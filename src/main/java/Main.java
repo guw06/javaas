@@ -73,8 +73,15 @@ public class Main {
         commandManager.register("новости", List.of(
             "последние новости", "что нового", "новость", "news",
             "что в мире", "что происходит", "свежие новости",
-            "какие новости", "расскажи новости", "покажи новости"
+            "какие новости", "расскажи новости", "покажи новости", "новостная сводка",
+            "сводка дня", "новости про", "новости о"
         ), new NewsCommand());
+
+        commandManager.register("спорт", List.of(
+            "счет матча", "счет игры", "результат матча", "как сыграли",
+            "футбол", "баскетбол", "хоккей", "nba", "нба", "nhl", "нхл",
+            "апл", "лига чемпионов", "real madrid", "реал", "барселона"
+        ), new SportsScoreCommand());
         
         commandManager.register("валюта", List.of(
             "курс", "курс доллара", "курс валют", "доллар", "евро",
@@ -97,6 +104,40 @@ public class Main {
             "открой блокнот", "notepad", "открой notepad",
             "текстовый редактор", "запусти блокнот", "открой редактор"
         ), new OpenNotepadCommand());
+
+        commandManager.register("программа", List.of(
+            "приложение", "открой программу", "запусти программу", "закрой программу",
+            "открой приложение", "запусти приложение", "закрой приложение",
+            "калькулятор", "paint", "пэйнт", "проводник", "терминал", "cmd",
+            "командная строка", "powershell", "chrome", "хром", "edge", "эдж"
+        ), new ProgramControlCommand());
+
+        commandManager.register("диспетчер задач", List.of(
+            "task manager", "taskmgr", "открой диспетчер задач", "запусти диспетчер задач"
+        ), new TaskManagerCommand());
+
+        commandManager.register("вкладк", List.of(
+            "новая вкладка", "открой вкладку", "закрой вкладку", "следующая вкладка",
+            "предыдущая вкладка", "обнови вкладку", "адресная строка", "открой сайт",
+            "перейди на сайт", "сайт", "browser tab"
+        ), new BrowserTabsCommand());
+
+        commandManager.register("wi-fi", List.of(
+            "wifi", "вайфай", "вай-фай", "bluetooth", "блютуз", "блютус",
+            "включи wi-fi", "выключи wi-fi", "включи bluetooth", "выключи bluetooth",
+            "настройки wi-fi", "настройки bluetooth"
+        ), new NetworkControlCommand());
+
+        commandManager.register("файл", List.of(
+            "файлы", "папк", "создай файл", "создай папку", "удали файл", "удали папку",
+            "перемести файл", "перенеси файл", "перемести папку", "перенеси папку",
+            "move file", "create file", "delete file"
+        ), new FileControlCommand());
+
+        commandManager.register("word", List.of(
+            "ворд", "docx", "документ word", "вордовский документ", "создай документ",
+            "создай word", "создай ворд", "подготовь документ", "сформируй документ"
+        ), new WordDocumentCommand());
         
         commandManager.register("запомни", List.of(
             "сохрани", "записи", "запиши", "добавь заметку",
@@ -147,6 +188,11 @@ public class Main {
             "calc", "математика", "math", "считай", "calculator",
             "посчитать", "рассчитай"
         ), new CalculatorCommand());
+
+        commandManager.register("реши задачу", List.of(
+            "решить задачу", "помоги решить", "объясни решение", "найди решение",
+            "реши пример", "объясни задачу"
+        ), new ProblemSolverCommand());
         
         commandManager.register("очисти", List.of(
             "очисти память", "удали заметки", "забудь все",

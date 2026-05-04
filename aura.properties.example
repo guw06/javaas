@@ -1,0 +1,9 @@
+ai.provider=gemini
+
+# Gemini
+gemini.api.key=YOUR_GEMINI_API_KEY
+gemini.model=gemini-2.5-flash-lite
+
+# OpenAI
+openai.api.key=YOUR_OPENAI_API_KEY
+openai.model=gpt-5.4-mini

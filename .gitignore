@@ -1,0 +1,6 @@
+aura.properties
+.env
+*.local.properties
+target/
+*.class
+jarvis.db

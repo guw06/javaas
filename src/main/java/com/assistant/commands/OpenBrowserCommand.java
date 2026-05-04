@@ -1,16 +1,26 @@
 package com.assistant.commands;
 
-import java.awt.Desktop;
-import java.net.URI;
+import com.assistant.services.WindowsAutomationService;
+
+import java.util.Locale;
 
 public class OpenBrowserCommand implements Command {
+    private final WindowsAutomationService windows = new WindowsAutomationService();
+
     @Override
     public String execute(String input) {
-        try {
-            Desktop.getDesktop().browse(new URI("https://google.com"));
-            return "Браузер открыт";
-        } catch (Exception e) {
-            return "Не удалось открыть браузер: " + e.getMessage();
+        String lower = input == null ? "" : input.toLowerCase(Locale.ROOT);
+
+        if (lower.contains("закрой") || lower.contains("закрыть") || lower.contains("останови") || lower.contains("close")) {
+            if (lower.contains("edge") || lower.contains("эдж")) {
+                return windows.closeProgram("закрой edge");
+            }
+            if (lower.contains("chrome") || lower.contains("хром")) {
+                return windows.closeProgram("закрой chrome");
+            }
+            return "Уточните браузер: закрой chrome или закрой edge.";
         }
+
+        return windows.openBrowserTarget(input);
     }
 }

@@ -1,73 +1,77 @@
-// ===== DOM Elements =====
-const messagesContainer = document.getElementById('messages');
-const textInput = document.getElementById('text-input');
-const sendButton = document.getElementById('send-button');
-const micButton = document.getElementById('mic-button');
+const messagesContainer = document.getElementById("messages");
+const textInput = document.getElementById("text-input");
+const sendButton = document.getElementById("send-button");
+const micButton = document.getElementById("mic-button");
+
+const ASSISTANT_NAME = "AURA";
+const STARTUP_GREETING = "Здравствуйте. Я AURA, ваш персональный ассистент. Система готова, я на связи.";
 
 let voiceEnabled = true;
 let isOnline = false;
 
-// ===== Boot Sequence =====
 (function bootSequence() {
-    const bar = document.getElementById('boot-progress-bar');
-    const status = document.getElementById('boot-status');
+    const bar = document.getElementById("boot-progress-bar");
+    const status = document.getElementById("boot-status");
     const steps = [
-        { pct: 15, text: 'Загрузка ядра системы...' },
-        { pct: 35, text: 'Подключение к серверу...' },
-        { pct: 55, text: 'Инициализация Gemini AI...' },
-        { pct: 75, text: 'Настройка голосового модуля...' },
-        { pct: 90, text: 'Калибровка интерфейса...' },
-        { pct: 100, text: 'Системы готовы. Добро пожаловать.' }
+        { pct: 14, text: "Проверяю локальное ядро..." },
+        { pct: 32, text: "Подключаю голосовой модуль..." },
+        { pct: 49, text: "Синхронизирую память..." },
+        { pct: 68, text: "Готовлю командный канал..." },
+        { pct: 86, text: "Настраиваю рабочую станцию..." },
+        { pct: 100, text: `${ASSISTANT_NAME} готова.` }
     ];
+
     let i = 0;
     const interval = setInterval(() => {
         if (i < steps.length) {
-            bar.style.width = steps[i].pct + '%';
+            bar.style.width = `${steps[i].pct}%`;
             status.textContent = steps[i].text;
             i++;
-        } else {
-            clearInterval(interval);
-            setTimeout(() => {
-                document.getElementById('boot-screen').classList.add('done');
-                document.getElementById('main-ui').classList.remove('hidden');
-                initApp();
-            }, 600);
+            return;
         }
-    }, 400);
+
+        clearInterval(interval);
+        setTimeout(() => {
+            document.getElementById("boot-screen").classList.add("done");
+            document.getElementById("main-ui").classList.remove("hidden");
+            initApp();
+        }, 500);
+    }, 360);
 })();
 
-// ===== Initialize App =====
 function initApp() {
     initParticles();
     initSystemClock();
     checkConnection();
     setInterval(checkConnection, 5000);
-    addSystemMessage('J.A.R.V.I.S. online. Все системы активны.');
-    setTimeout(() => {
-        addMessage('Здравствуйте! Я ваш персональный ИИ-ассистент. Чем могу помочь?', false);
-    }, 500);
-
-    // Voice settings controls
     setupVoiceControls();
+
+    addSystemMessage(`${ASSISTANT_NAME} online. Канал открыт.`);
+    setTimeout(() => {
+        addMessage(STARTUP_GREETING, false);
+        if (window.speak && voiceEnabled) {
+            setTimeout(() => window.speak(STARTUP_GREETING), 450);
+        }
+    }, 420);
 }
 
-// ===== Messages =====
 function addMessage(text, isUser) {
-    const div = document.createElement('div');
-    div.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+    const div = document.createElement("div");
+    div.className = `message ${isUser ? "user-message" : "assistant-message"}`;
+
     if (isUser) {
         div.textContent = text;
     } else {
-        // Typing effect for assistant
         typeText(div, text);
     }
+
     messagesContainer.appendChild(div);
     scrollToBottom();
 }
 
 function addSystemMessage(text) {
-    const div = document.createElement('div');
-    div.className = 'message system-message';
+    const div = document.createElement("div");
+    div.className = "message system-message";
     div.textContent = text;
     messagesContainer.appendChild(div);
     scrollToBottom();
@@ -75,38 +79,38 @@ function addSystemMessage(text) {
 
 function typeText(element, text) {
     let i = 0;
-    const speed = Math.max(8, 30 - text.length / 20);
-    element.textContent = '';
+    const speed = Math.max(7, 24 - text.length / 26);
+    element.textContent = "";
+
     function type() {
-        if (i < text.length) {
-            element.textContent += text.charAt(i);
-            i++;
-            scrollToBottom();
-            setTimeout(type, speed);
-        }
+        if (i >= text.length) return;
+        element.textContent += text.charAt(i);
+        i++;
+        scrollToBottom();
+        setTimeout(type, speed);
     }
+
     type();
 }
 
 function showTypingIndicator() {
-    const div = document.createElement('div');
-    div.className = 'typing-indicator';
-    div.id = 'typing-indicator';
+    const div = document.createElement("div");
+    div.className = "typing-indicator";
+    div.id = "typing-indicator";
     div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
     messagesContainer.appendChild(div);
     scrollToBottom();
 }
 
 function hideTypingIndicator() {
-    document.getElementById('typing-indicator')?.remove();
+    document.getElementById("typing-indicator")?.remove();
 }
 
 function scrollToBottom() {
-    const chat = document.getElementById('chat-container');
+    const chat = document.getElementById("chat-container");
     if (chat) chat.scrollTop = chat.scrollHeight;
 }
 
-// ===== Send Command =====
 async function handleSendCommand() {
     const text = textInput.value.trim();
     if (!text) return;
@@ -114,7 +118,7 @@ async function handleSendCommand() {
     sendButton.disabled = true;
     textInput.disabled = true;
     addMessage(text, true);
-    textInput.value = '';
+    textInput.value = "";
     showTypingIndicator();
 
     try {
@@ -122,12 +126,15 @@ async function handleSendCommand() {
         hideTypingIndicator();
         addMessage(response, false);
         if (window.speak && voiceEnabled) window.speak(response);
-    } catch (error) {
+    } catch {
         hideTypingIndicator();
-        const errDiv = document.createElement('div');
-        errDiv.className = 'message error-message';
-        errDiv.textContent = !navigator.onLine ? '❌ Нет интернета' :
-            !isOnline ? '❌ Сервер недоступен' : '❌ Ошибка обработки';
+        const errDiv = document.createElement("div");
+        errDiv.className = "message error-message";
+        errDiv.textContent = !navigator.onLine
+            ? "Нет интернет-соединения"
+            : !isOnline
+                ? "Backend недоступен"
+                : "Не удалось обработать запрос";
         messagesContainer.appendChild(errDiv);
         scrollToBottom();
     } finally {
@@ -136,180 +143,222 @@ async function handleSendCommand() {
         textInput.focus();
     }
 }
+
 window.handleSendCommand = handleSendCommand;
 
-// Events
-sendButton.addEventListener('click', handleSendCommand);
-textInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSendCommand(); });
+sendButton.addEventListener("click", handleSendCommand);
+textInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") handleSendCommand();
+});
 
-// Mic button
-micButton.addEventListener('click', () => {
+micButton.addEventListener("click", () => {
     if (window.startVoiceRecognition) window.startVoiceRecognition();
 });
-micButton.addEventListener('dblclick', () => {
-    if (window.toggleContinuousMode) {
-        const on = window.toggleContinuousMode();
-        addSystemMessage(on ? '🎯 Режим постоянной прослушки включён (wake words: джарвис, алиса, ассистент)' : '🛑 Режим прослушки выключен');
-    }
+
+micButton.addEventListener("dblclick", () => {
+    if (!window.toggleContinuousMode) return;
+
+    const on = window.toggleContinuousMode();
+    addSystemMessage(on
+        ? "Постоянное прослушивание включено."
+        : "Постоянное прослушивание выключено.");
 });
 
-// Hint chips & command items
-document.querySelectorAll('.hint-chip, .command-item').forEach(el => {
-    el.addEventListener('click', () => {
+document.querySelectorAll(".hint-chip, .command-item").forEach((el) => {
+    el.addEventListener("click", () => {
         const cmd = el.dataset.cmd;
-        if (cmd) { textInput.value = cmd; handleSendCommand(); }
+        if (!cmd) return;
+        textInput.value = cmd;
+        handleSendCommand();
     });
 });
 
-// ===== Connection =====
 async function checkConnection() {
     try {
-        const r = await fetch('/ping', { cache: 'no-cache' });
-        if (r.ok && !isOnline) {
+        const response = await fetch("/ping", { cache: "no-cache" });
+        if (response.ok) {
             isOnline = true;
             updateConnectionUI(true);
         }
     } catch {
-        if (isOnline) {
-            isOnline = false;
-            updateConnectionUI(false);
-        }
+        isOnline = false;
+        updateConnectionUI(false);
     }
-    // Update system memory
+
     try {
-        const r = await fetch('/api/status');
-        if (r.ok) {
-            const d = await r.json();
-            const mem = document.getElementById('system-mem');
-            if (mem && d.memory) mem.textContent = `MEM: ${d.memory.percentage}%`;
-        }
-    } catch {}
+        const response = await fetch("/api/status", { cache: "no-cache" });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const mem = document.getElementById("system-mem");
+        if (mem && data.memory) mem.textContent = `MEM: ${data.memory.percentage}%`;
+    } catch {
+        // Status is optional for the visual shell.
+    }
 }
 
 function updateConnectionUI(online) {
-    const badge = document.getElementById('connection-status');
-    const text = document.getElementById('status-text');
+    const badge = document.getElementById("connection-status");
+    const text = document.getElementById("status-text");
+    const runtime = document.getElementById("runtime-backend");
+
     if (online) {
-        badge.className = 'status-badge online';
-        text.textContent = 'ONLINE';
-    } else {
-        badge.className = 'status-badge offline';
-        text.textContent = 'OFFLINE';
+        badge.className = "status-badge online";
+        text.textContent = "ONLINE";
+        if (runtime) runtime.textContent = "active";
+        return;
     }
+
+    badge.className = "status-badge offline";
+    text.textContent = "OFFLINE";
+    if (runtime) runtime.textContent = "offline";
 }
 
-// ===== System Clock =====
 function initSystemClock() {
     function update() {
-        const el = document.getElementById('system-time');
-        if (el) el.textContent = new Date().toLocaleTimeString('ru-RU');
+        const el = document.getElementById("system-time");
+        if (el) el.textContent = new Date().toLocaleTimeString("ru-RU");
     }
+
     update();
     setInterval(update, 1000);
 }
 
-// ===== Voice Controls =====
 function setupVoiceControls() {
-    const rateEl = document.getElementById('voice-rate');
-    const pitchEl = document.getElementById('voice-pitch');
-    const volumeEl = document.getElementById('voice-volume');
+    const rateEl = document.getElementById("voice-rate");
+    const pitchEl = document.getElementById("voice-pitch");
+    const volumeEl = document.getElementById("voice-volume");
 
-    if (rateEl) rateEl.addEventListener('input', () => {
-        window.voiceSettings.rate = parseFloat(rateEl.value);
-        document.getElementById('rate-value').textContent = rateEl.value;
-    });
-    if (pitchEl) pitchEl.addEventListener('input', () => {
-        window.voiceSettings.pitch = parseFloat(pitchEl.value);
-        document.getElementById('pitch-value').textContent = pitchEl.value;
-    });
-    if (volumeEl) volumeEl.addEventListener('input', () => {
-        window.voiceSettings.volume = parseFloat(volumeEl.value);
-        document.getElementById('volume-value').textContent = volumeEl.value;
-    });
+    if (rateEl) {
+        rateEl.addEventListener("input", () => {
+            window.voiceSettings.rate = parseFloat(rateEl.value);
+            document.getElementById("rate-value").textContent = rateEl.value;
+        });
+    }
 
-    document.getElementById('test-voice')?.addEventListener('click', () => {
-        if (window.speak) window.speak('Тестирование голоса. Я ваш персональный ассистент Джарвис.');
+    if (pitchEl) {
+        pitchEl.addEventListener("input", () => {
+            window.voiceSettings.pitch = parseFloat(pitchEl.value);
+            document.getElementById("pitch-value").textContent = pitchEl.value;
+        });
+    }
+
+    if (volumeEl) {
+        volumeEl.addEventListener("input", () => {
+            window.voiceSettings.volume = parseFloat(volumeEl.value);
+            document.getElementById("volume-value").textContent = volumeEl.value;
+        });
+    }
+
+    document.getElementById("test-voice")?.addEventListener("click", () => {
+        if (window.speak) window.speak("Проверка голоса. AURA готова к работе.");
     });
 }
 
-// ===== Top-bar buttons =====
-document.getElementById('voice-toggle')?.addEventListener('click', function() {
+document.getElementById("voice-toggle")?.addEventListener("click", function () {
     voiceEnabled = !voiceEnabled;
-    this.classList.toggle('active', voiceEnabled);
-    this.textContent = voiceEnabled ? '🔊' : '🔇';
-    addSystemMessage(voiceEnabled ? '🔊 Озвучивание включено' : '🔇 Озвучивание выключено');
+    this.classList.toggle("active", voiceEnabled);
+    addSystemMessage(voiceEnabled ? "Озвучивание включено." : "Озвучивание выключено.");
 });
 
-document.getElementById('settings-toggle')?.addEventListener('click', () => {
-    document.getElementById('settings-panel')?.classList.toggle('open');
-    document.getElementById('commands-panel')?.classList.remove('open');
+document.getElementById("settings-toggle")?.addEventListener("click", () => {
+    document.getElementById("settings-panel")?.classList.toggle("open");
+    document.getElementById("commands-panel")?.classList.remove("open");
 });
 
-document.getElementById('history-toggle')?.addEventListener('click', () => {
-    document.getElementById('commands-panel')?.classList.toggle('open');
-    document.getElementById('settings-panel')?.classList.remove('open');
+document.getElementById("history-toggle")?.addEventListener("click", () => {
+    document.getElementById("commands-panel")?.classList.toggle("open");
+    document.getElementById("settings-panel")?.classList.remove("open");
 });
 
-document.querySelectorAll('.panel-close').forEach(btn => {
-    btn.addEventListener('click', () => {
+document.querySelectorAll(".panel-close").forEach((btn) => {
+    btn.addEventListener("click", () => {
         const panel = btn.dataset.panel;
-        if (panel) document.getElementById(panel)?.classList.remove('open');
+        if (panel) document.getElementById(panel)?.classList.remove("open");
     });
 });
 
-// ===== Particles =====
 function initParticles() {
-    const canvas = document.getElementById('particles-canvas');
+    const canvas = document.getElementById("particles-canvas");
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let w, h, particles = [];
+
+    const ctx = canvas.getContext("2d");
+    const colors = [
+        "rgba(143, 227, 193, ",
+        "rgba(233, 184, 114, ",
+        "rgba(177, 145, 255, "
+    ];
+    let w;
+    let h;
+    let particles = [];
 
     function resize() {
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
+        w = canvas.width = window.innerWidth * window.devicePixelRatio;
+        h = canvas.height = window.innerHeight * window.devicePixelRatio;
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
     }
-    resize();
-    window.addEventListener('resize', resize);
 
-    for (let i = 0; i < 60; i++) {
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < 52; i++) {
         particles.push({
-            x: Math.random() * w, y: Math.random() * h,
-            vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-            size: Math.random() * 2 + 0.5, alpha: Math.random() * 0.3 + 0.1
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.18 * window.devicePixelRatio,
+            vy: (Math.random() - 0.5) * 0.18 * window.devicePixelRatio,
+            size: (Math.random() * 2.4 + 0.8) * window.devicePixelRatio,
+            alpha: Math.random() * 0.18 + 0.08,
+            color: colors[Math.floor(Math.random() * colors.length)]
         });
     }
 
     function draw() {
         requestAnimationFrame(draw);
         ctx.clearRect(0, 0, w, h);
-        particles.forEach(p => {
-            p.x += p.vx; p.y += p.vy;
-            if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
-            if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+
+        particles.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = w;
+            if (p.x > w) p.x = 0;
+            if (p.y < 0) p.y = h;
+            if (p.y > h) p.y = 0;
+
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(0, 212, 255, ${p.alpha})`;
+            ctx.fillStyle = `${p.color}${p.alpha})`;
             ctx.fill();
         });
-        // Lines between nearby particles
+
         for (let i = 0; i < particles.length; i++) {
             for (let j = i + 1; j < particles.length; j++) {
                 const dx = particles[i].x - particles[j].x;
                 const dy = particles[i].y - particles[j].y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 120) {
+                const max = 125 * window.devicePixelRatio;
+
+                if (dist < max) {
                     ctx.beginPath();
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(particles[j].x, particles[j].y);
-                    ctx.strokeStyle = `rgba(0, 212, 255, ${0.06 * (1 - dist / 120)})`;
+                    ctx.strokeStyle = `rgba(230, 221, 197, ${0.045 * (1 - dist / max)})`;
                     ctx.stroke();
                 }
             }
         }
     }
+
     draw();
 }
 
-// Network events
-window.addEventListener('online', () => { updateConnectionUI(true); addSystemMessage('🌐 Интернет восстановлен'); });
-window.addEventListener('offline', () => { updateConnectionUI(false); addSystemMessage('🌐 Нет интернета'); });
+window.addEventListener("online", () => {
+    updateConnectionUI(true);
+    addSystemMessage("Интернет-соединение восстановлено.");
+});
+
+window.addEventListener("offline", () => {
+    updateConnectionUI(false);
+    addSystemMessage("Интернет-соединение потеряно.");
+});

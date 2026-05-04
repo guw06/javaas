@@ -1,48 +1,69 @@
 package com.assistant.commands;
 
-/**
- * Команда "помощь" — показывает все доступные команды
- */
 public class HelpCommand implements Command {
     @Override
     public String execute(String input) {
         StringBuilder sb = new StringBuilder();
-        sb.append("📋 Вот что я умею:\n\n");
-        
-        sb.append("🎯 Основные:\n");
-        sb.append("  • привет / здравствуй — приветствие\n");
-        sb.append("  • время / который час — текущее время\n");
-        sb.append("  • дата / какое число — текущая дата\n\n");
-        
-        sb.append("🌐 Интернет:\n");
-        sb.append("  • погода / температура — погода в Астане\n");
-        sb.append("  • новости / что нового — последние новости\n");
-        sb.append("  • валюта / курс доллара — курсы валют\n");
-        sb.append("  • шутка / анекдот — случайная шутка\n");
-        sb.append("  • факт / удиви меня — интересный факт\n\n");
-        
-        sb.append("💻 Система:\n");
-        sb.append("  • блокнот — открыть блокнот\n");
-        sb.append("  • браузер / открой гугл — открыть браузер\n");
-        sb.append("  • найди [запрос] — поиск в Google\n");
-        sb.append("  • скриншот / скрин — снимок экрана\n");
-        sb.append("  • буфер — содержимое буфера обмена\n");
-        sb.append("  • статистика / память — системные ресурсы\n\n");
-        
-        sb.append("🧠 Память:\n");
-        sb.append("  • запомни [текст] — сохранить заметку\n");
-        sb.append("  • вспомни / заметки — показать заметки\n");
-        sb.append("  • очисти память — удалить все заметки\n");
-        sb.append("  • история — показать историю диалогов\n\n");
-        
-        sb.append("🔢 Утилиты:\n");
-        sb.append("  • посчитай [выражение] — калькулятор\n");
-        sb.append("  • помощь / команды — это меню\n\n");
-        
-        sb.append("🤖 Gemini AI:\n");
-        sb.append("  Любой другой вопрос автоматически отправляется в ИИ!\n");
-        sb.append("  Просто спрашивайте что угодно.");
-        
+        sb.append("Вот что умеет AURA:\n\n");
+
+        sb.append("Основное:\n");
+        sb.append("  - привет, время, дата\n");
+        sb.append("  - погода, новости, валюта\n");
+        sb.append("  - шутка, факт, посчитай 2 + 2\n\n");
+
+        sb.append("Компьютер:\n");
+        sb.append("  - открой калькулятор\n");
+        sb.append("  - открой проводник\n");
+        sb.append("  - открой chrome\n");
+        sb.append("  - закрой блокнот\n");
+        sb.append("  - открой диспетчер задач\n\n");
+
+        sb.append("Браузер:\n");
+        sb.append("  - новая вкладка\n");
+        sb.append("  - закрой вкладку\n");
+        sb.append("  - следующая вкладка\n");
+        sb.append("  - предыдущая вкладка\n");
+        sb.append("  - обнови вкладку\n");
+        sb.append("  - открой сайт youtube.com\n\n");
+
+        sb.append("Новости и спорт:\n");
+        sb.append("  - новости\n");
+        sb.append("  - новости про искусственный интеллект\n");
+        sb.append("  - счет матча Реал\n");
+        sb.append("  - результаты NBA\n");
+        sb.append("  - как сыграла Барселона\n\n");
+
+        sb.append("Сеть:\n");
+        sb.append("  - включи Wi-Fi\n");
+        sb.append("  - выключи Wi-Fi\n");
+        sb.append("  - включи Bluetooth\n");
+        sb.append("  - выключи Bluetooth\n");
+        sb.append("  - настройки Wi-Fi\n\n");
+
+        sb.append("Файлы:\n");
+        sb.append("  - создай файл notes.txt\n");
+        sb.append("  - создай файл notes.txt с текстом привет\n");
+        sb.append("  - создай папку project\n");
+        sb.append("  - перемести \"notes.txt\" в \"archive\"\n");
+        sb.append("  - удали файл notes.txt\n");
+        sb.append("Удаление безопасное: файлы переносятся в ~/.aura-trash.\n\n");
+
+        sb.append("Word-документы:\n");
+        sb.append("  - создай Word документ \"report.docx\" с текстом Привет\n");
+        sb.append("  - создай документ Word на тему искусственный интеллект\n\n");
+
+        sb.append("Мышление и задачи:\n");
+        sb.append("  - посчитай 15 процентов от 240\n");
+        sb.append("  - посчитай (12 + 8) * 3\n");
+        sb.append("  - реши задачу: ...\n");
+        sb.append("AURA понимает часть синонимов: открой/запусти/стартани, удали/сотри, найди/поищи/загугли.\n\n");
+
+        sb.append("Память:\n");
+        sb.append("  - запомни [текст]\n");
+        sb.append("  - вспомни\n");
+        sb.append("  - история\n\n");
+
+        sb.append("Если команда не системная, AURA отправит вопрос в ИИ.");
         return sb.toString();
     }
 }

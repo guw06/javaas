@@ -3,194 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="J.A.R.V.I.S. — Персональный голосовой ИИ-ассистент с искусственным интеллектом">
-    <title>J.A.R.V.I.S. — AI Assistant</title>
+    <meta name="description" content="AURA - персональный ИИ-ассистент на Java">
+    <title>AURA - персональный ассистент</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Загрузочный экран -->
     <div id="boot-screen" class="boot-screen">
         <div class="boot-content">
-            <div class="boot-reactor">
-                <div class="boot-ring ring-1"></div>
-                <div class="boot-ring ring-2"></div>
-                <div class="boot-ring ring-3"></div>
-                <div class="boot-core"></div>
+            <div class="boot-mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
-            <div class="boot-text">
-                <div class="boot-title">J.A.R.V.I.S.</div>
-                <div class="boot-subtitle" id="boot-status">Инициализация систем...</div>
-                <div class="boot-progress">
-                    <div class="boot-progress-bar" id="boot-progress-bar"></div>
-                </div>
+            <p class="boot-kicker">personal intelligence workspace</p>
+            <h1>AURA</h1>
+            <p id="boot-status" class="boot-status">Поднимаю ядро ассистента...</p>
+            <div class="boot-progress" aria-hidden="true">
+                <div id="boot-progress-bar" class="boot-progress-bar"></div>
             </div>
         </div>
     </div>
 
-    <!-- Основной интерфейс -->
     <div id="main-ui" class="main-ui hidden">
-        <!-- Фоновые частицы -->
-        <canvas id="particles-canvas" class="particles-canvas"></canvas>
-        
-        <!-- HUD элементы -->
-        <div class="hud-corners">
-            <div class="hud-corner top-left"></div>
-            <div class="hud-corner top-right"></div>
-            <div class="hud-corner bottom-left"></div>
-            <div class="hud-corner bottom-right"></div>
-        </div>
+        <canvas id="particles-canvas" class="ambient-canvas"></canvas>
 
-        <!-- Верхняя панель -->
-        <header class="top-bar">
-            <div class="top-bar-left">
+        <header class="app-header">
+            <div class="brand-block">
+                <div class="brand-mark" aria-hidden="true">A</div>
+                <div>
+                    <p class="eyebrow">AURA</p>
+                    <h1>Личный ассистент</h1>
+                </div>
+            </div>
+
+            <div class="header-status">
                 <div id="connection-status" class="status-badge online">
                     <span class="status-dot"></span>
                     <span id="status-text">ONLINE</span>
                 </div>
-                <div class="system-info">
-                    <span id="system-time" class="sys-info-item">00:00:00</span>
-                    <span class="sys-divider">|</span>
-                    <span id="system-mem" class="sys-info-item">MEM: --</span>
-                </div>
+                <span id="system-time" class="metric-pill">00:00:00</span>
+                <span id="system-mem" class="metric-pill">MEM: --</span>
             </div>
-            <div class="top-bar-center">
-                <h1 class="jarvis-title">
-                    <span class="title-letter" style="animation-delay: 0s">J</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.05s">A</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.1s">R</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.15s">V</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.2s">I</span><span class="title-dot">.</span><span class="title-letter" style="animation-delay: 0.25s">S</span><span class="title-dot">.</span>
-                </h1>
-            </div>
-            <div class="top-bar-right">
-                <button id="settings-toggle" class="hud-btn" title="Настройки">⚙</button>
-                <button id="history-toggle" class="hud-btn" title="История">📋</button>
-                <button id="voice-toggle" class="hud-btn active" title="Озвучивание">🔊</button>
-            </div>
+
+            <nav class="header-actions" aria-label="Панели">
+                <button id="settings-toggle" class="icon-button" type="button" aria-label="Настройки голоса" title="Настройки голоса">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 0 1 7.1 4l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+                </button>
+                <button id="history-toggle" class="icon-button" type="button" aria-label="Команды" title="Команды">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+                </button>
+                <button id="voice-toggle" class="icon-button active" type="button" aria-label="Озвучивание" title="Озвучивание">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                </button>
+            </nav>
         </header>
 
-        <!-- Панель настроек -->
-        <div id="settings-panel" class="side-panel settings-panel">
+        <aside id="settings-panel" class="side-panel settings-panel">
             <div class="panel-header">
-                <h3>⚙ Настройки голоса</h3>
-                <button class="panel-close" data-panel="settings-panel">✕</button>
+                <div>
+                    <p class="eyebrow">Voice</p>
+                    <h2>Настройки голоса</h2>
+                </div>
+                <button class="panel-close" data-panel="settings-panel" type="button" aria-label="Закрыть">×</button>
             </div>
             <div class="panel-content">
-                <div class="setting-group">
-                    <label>Голос</label>
-                    <select id="voice-select" class="hud-select"></select>
-                </div>
-                <div class="setting-group">
-                    <label>Скорость: <span id="rate-value">1.0</span></label>
-                    <input type="range" id="voice-rate" class="hud-range" min="0.5" max="2" step="0.1" value="1.0">
-                </div>
-                <div class="setting-group">
-                    <label>Тон: <span id="pitch-value">1.0</span></label>
-                    <input type="range" id="voice-pitch" class="hud-range" min="0.5" max="2" step="0.1" value="1.0">
-                </div>
-                <div class="setting-group">
-                    <label>Громкость: <span id="volume-value">1.0</span></label>
-                    <input type="range" id="voice-volume" class="hud-range" min="0" max="1" step="0.1" value="1.0">
-                </div>
-                <button id="test-voice" class="hud-action-btn">🔊 Тест голоса</button>
+                <label class="field">
+                    <span>Голос</span>
+                    <select id="voice-select" class="control-select"></select>
+                </label>
+                <label class="field">
+                    <span>Скорость <b id="rate-value">1.0</b></span>
+                    <input type="range" id="voice-rate" class="control-range" min="0.5" max="2" step="0.1" value="1.0">
+                </label>
+                <label class="field">
+                    <span>Тон <b id="pitch-value">1.0</b></span>
+                    <input type="range" id="voice-pitch" class="control-range" min="0.5" max="2" step="0.1" value="1.0">
+                </label>
+                <label class="field">
+                    <span>Громкость <b id="volume-value">1.0</b></span>
+                    <input type="range" id="voice-volume" class="control-range" min="0" max="1" step="0.1" value="1.0">
+                </label>
+                <button id="test-voice" class="primary-panel-button" type="button">Проверить голос</button>
             </div>
-        </div>
+        </aside>
 
-        <!-- Панель команд -->
-        <div id="commands-panel" class="side-panel commands-panel">
+        <aside id="commands-panel" class="side-panel commands-panel">
             <div class="panel-header">
-                <h3>📋 Команды</h3>
-                <button class="panel-close" data-panel="commands-panel">✕</button>
+                <div>
+                    <p class="eyebrow">Tools</p>
+                    <h2>Быстрые команды</h2>
+                </div>
+                <button class="panel-close" data-panel="commands-panel" type="button" aria-label="Закрыть">×</button>
             </div>
-            <div class="panel-content">
-                <div class="command-category">
-                    <h4>🎯 Системные</h4>
-                    <div class="command-list">
-                        <div class="command-item" data-cmd="привет">👋 привет</div>
-                        <div class="command-item" data-cmd="время">⏰ время</div>
-                        <div class="command-item" data-cmd="дата">📅 дата</div>
-                        <div class="command-item" data-cmd="погода">🌤️ погода</div>
-                        <div class="command-item" data-cmd="статистика">📊 статистика</div>
-                    </div>
-                </div>
-                <div class="command-category">
-                    <h4>🌐 Интернет</h4>
-                    <div class="command-list">
-                        <div class="command-item" data-cmd="новости">📰 новости</div>
-                        <div class="command-item" data-cmd="валюта">💱 валюта</div>
-                        <div class="command-item" data-cmd="шутка">😂 шутка</div>
-                        <div class="command-item" data-cmd="факт">🐱 факт</div>
-                    </div>
-                </div>
-                <div class="command-category">
-                    <h4>💻 Система</h4>
-                    <div class="command-list">
-                        <div class="command-item" data-cmd="блокнот">🗒️ блокнот</div>
-                        <div class="command-item" data-cmd="скриншот">📸 скриншот</div>
-                        <div class="command-item" data-cmd="буфер">📋 буфер</div>
-                        <div class="command-item" data-cmd="найди Java">🔍 найди ...</div>
-                    </div>
-                </div>
-                <div class="command-category">
-                    <h4>🧠 Память</h4>
-                    <div class="command-list">
-                        <div class="command-item" data-cmd="запомни встреча в 15:00">💾 запомни ...</div>
-                        <div class="command-item" data-cmd="вспомни">📝 вспомни</div>
-                    </div>
-                </div>
-                <div class="command-category">
-                    <h4>🤖 Gemini AI</h4>
-                    <p class="command-hint">Любой вопрос автоматически идёт в ИИ</p>
-                </div>
+            <div class="panel-content command-groups">
+                <section>
+                    <h3>Система</h3>
+                    <button class="command-item" data-cmd="статистика">Статистика</button>
+                    <button class="command-item" data-cmd="открой калькулятор">Калькулятор</button>
+                    <button class="command-item" data-cmd="открой диспетчер задач">Диспетчер задач</button>
+                    <button class="command-item" data-cmd="скриншот">Скриншот</button>
+                    <button class="command-item" data-cmd="буфер">Буфер</button>
+                    <button class="command-item" data-cmd="блокнот">Блокнот</button>
+                </section>
+                <section>
+                    <h3>Браузер и сеть</h3>
+                    <button class="command-item" data-cmd="новая вкладка">Новая вкладка</button>
+                    <button class="command-item" data-cmd="закрой вкладку">Закрыть вкладку</button>
+                    <button class="command-item" data-cmd="настройки Wi-Fi">Wi-Fi</button>
+                    <button class="command-item" data-cmd="настройки Bluetooth">Bluetooth</button>
+                    <button class="command-item" data-cmd="найди Java agent architecture">Поиск</button>
+                    <button class="command-item" data-cmd="новости">Новости</button>
+                    <button class="command-item" data-cmd="счет матча Реал">Счет матча</button>
+                    <button class="command-item" data-cmd="погода">Погода</button>
+                    <button class="command-item" data-cmd="валюта">Валюта</button>
+                </section>
+                <section>
+                    <h3>Файлы и память</h3>
+                    <button class="command-item" data-cmd="создай файл aura-note.txt">Создать файл</button>
+                    <button class="command-item" data-cmd="создай Word документ на тему искусственный интеллект">Word документ</button>
+                    <button class="command-item" data-cmd="создай папку aura-project">Создать папку</button>
+                    <button class="command-item" data-cmd="запомни встреча в 15:00">Запомнить</button>
+                    <button class="command-item" data-cmd="вспомни">Вспомнить</button>
+                    <button class="command-item" data-cmd="история">История</button>
+                    <button class="command-item" data-cmd="помощь">Помощь</button>
+                </section>
             </div>
-        </div>
+        </aside>
 
-        <!-- Центральная область -->
-        <main class="main-content">
-            <!-- Чат -->
-            <div id="chat-container" class="chat-container">
-                <div id="messages" class="messages"></div>
-            </div>
-
-            <!-- Центральный реактор + микрофон -->
-            <div class="reactor-section">
-                <!-- Audio визуализация -->
-                <canvas id="audio-visualizer" class="audio-visualizer"></canvas>
-                
-                <!-- Кнопка микрофона как Arc Reactor -->
-                <button id="mic-button" class="reactor-btn" title="Клик — голос | Двойной клик — постоянная прослушка">
-                    <div class="reactor-ring ring-outer"></div>
-                    <div class="reactor-ring ring-middle"></div>
-                    <div class="reactor-ring ring-inner"></div>
-                    <div class="reactor-core">
-                        <span class="mic-icon">🎤</span>
-                    </div>
-                </button>
-                
-                <div id="mode-badge" class="mode-badge">
-                    <span class="mode-dot"></span>
-                    <span id="mode-text">WAKE WORD MODE</span>
+        <main class="workspace">
+            <section class="left-rail">
+                <div class="rail-panel identity-panel">
+                    <p class="eyebrow">Agent profile</p>
+                    <h2>AURA</h2>
+                    <p class="soft-text">AURA - голосовой Java-ассистент с памятью, командами и будущим агентным ядром.</p>
                 </div>
-            </div>
+                <div class="rail-panel">
+                    <p class="eyebrow">Focus</p>
+                    <div class="focus-list">
+                        <span>диалог</span>
+                        <span>память</span>
+                        <span>браузер</span>
+                        <span>система</span>
+                    </div>
+                </div>
+            </section>
 
-            <!-- Поле ввода -->
-            <div class="input-section">
-                <div class="input-wrapper">
-                    <div class="input-glow"></div>
-                    <input type="text" id="text-input" placeholder="Введите команду или задайте вопрос..." autocomplete="off">
-                    <button id="send-button" class="send-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                        </svg>
+            <section class="chat-shell" aria-label="Диалог">
+                <div class="chat-topline">
+                    <div>
+                        <p class="eyebrow">Conversation</p>
+                        <h2>Командный канал</h2>
+                    </div>
+                    <div id="mode-badge" class="mode-badge">
+                        <span class="mode-dot"></span>
+                        <span id="mode-text">wake mode</span>
+                    </div>
+                </div>
+
+                <div id="chat-container" class="chat-container">
+                    <div id="messages" class="messages"></div>
+                </div>
+
+                <div class="input-section">
+                    <div class="input-wrapper">
+                        <input type="text" id="text-input" placeholder="Введите команду или вопрос..." autocomplete="off">
+                        <button id="send-button" class="send-button" type="button" aria-label="Отправить">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M22 2 11 13"/></svg>
+                        </button>
+                    </div>
+                    <div class="input-hints" aria-label="Подсказки">
+                        <button class="hint-chip" data-cmd="привет">привет</button>
+                        <button class="hint-chip" data-cmd="погода">погода</button>
+                        <button class="hint-chip" data-cmd="время">время</button>
+                        <button class="hint-chip" data-cmd="найди новости про ИИ">найди ИИ</button>
+                        <button class="hint-chip" data-cmd="запомни идею проекта">запомни</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="right-rail">
+                <div class="voice-orb-wrap">
+                    <canvas id="audio-visualizer" class="audio-visualizer"></canvas>
+                    <button id="mic-button" class="voice-orb" type="button" aria-label="Голосовой ввод" title="Голосовой ввод">
+                        <span class="orb-ring ring-a"></span>
+                        <span class="orb-ring ring-b"></span>
+                        <span class="orb-core">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
+                        </span>
                     </button>
                 </div>
-                <div class="input-hints">
-                    <button class="hint-chip" data-cmd="привет">привет</button>
-                    <button class="hint-chip" data-cmd="погода">погода</button>
-                    <button class="hint-chip" data-cmd="время">время</button>
-                    <button class="hint-chip" data-cmd="шутка">шутка</button>
-                    <button class="hint-chip" data-cmd="новости">новости</button>
+
+                <div class="rail-panel meter-panel">
+                    <p class="eyebrow">Runtime</p>
+                    <div class="meter-row"><span>Backend</span><b id="runtime-backend">active</b></div>
+                    <div class="meter-row"><span>Voice</span><b id="runtime-voice">ready</b></div>
+                    <div class="meter-row"><span>Gemini</span><b>linked</b></div>
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 
