@@ -11,6 +11,7 @@ import com.assistant.commands.ProgramControlCommand;
 import com.assistant.commands.SportsScoreCommand;
 import com.assistant.commands.TaskManagerCommand;
 import com.assistant.commands.WordDocumentCommand;
+import com.assistant.commands.YouTubeCommand;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class SmartAssistantService {
     private final NetworkControlCommand network = new NetworkControlCommand();
     private final FileControlCommand files = new FileControlCommand();
     private final TaskManagerCommand taskManager = new TaskManagerCommand();
+    private final YouTubeCommand youtube = new YouTubeCommand();
 
     public Optional<String> process(String input) {
         String text = normalize(input);
@@ -40,6 +42,9 @@ public class SmartAssistantService {
 
         if (isAgentIntent(text)) {
             return Optional.of(computerAgent.execute(input));
+        }
+        if (isYouTubeIntent(text)) {
+            return Optional.of(youtube.execute(input));
         }
         if (isWordDocumentIntent(text)) {
             return Optional.of(wordDocument.execute(input));
@@ -76,17 +81,31 @@ public class SmartAssistantService {
     }
 
     public String buildFallbackPrompt(String input) {
+        return buildFallbackPrompt(input, "", "");
+    }
+
+    public String buildFallbackPrompt(String input, String previousUserInput, String previousAssistantResponse) {
+        String context = previousUserInput == null || previousUserInput.isBlank()
+            ? "Контекста прошлого сообщения нет."
+            : """
+            Предыдущий запрос пользователя: %s
+            Предыдущий ответ AURA: %s
+            """.formatted(previousUserInput, previousAssistantResponse == null ? "" : previousAssistantResponse);
+
         return """
             Ты AURA, персональная ассистентка для управления компьютером.
             Общайся естественно, тепло и по-человечески, как внимательная девушка-помощница, а не как сухая нейросеть.
-            У тебя есть инструменты: программы, вкладки браузера, Wi-Fi/Bluetooth, файлы, Word-документы, новости, спорт, память, расчеты.
-            Если пользователь просит действие, но инструмент еще не подключен, скажи честно, что именно нужно добавить.
+            У тебя уже есть инструменты: программы, браузер, YouTube-поиск, вкладки, Wi-Fi/Bluetooth, файлы, Word-документы, новости, спорт, память, расчеты и agent mode.
+            Не говори "я подключу инструмент" или "давай я добавлю", если ты сама не меняешь код проекта прямо сейчас.
+            Если действие еще не поддерживается приложением, скажи коротко: "этот режим пока не подключен".
             Если это вопрос, отвечай кратко, понятно, по-русски, без канцелярита и фраз вроде "как ИИ".
             Не выдумывай, что ты выполнила действие, если оно не выполнено.
             Не показывай длинные технические пути к файлам или служебные URL без необходимости.
+            Учитывай короткий контекст диалога:
+            %s
 
             Пользователь: %s
-            """.formatted(input);
+            """.formatted(context, input);
     }
 
     private boolean isMathIntent(String text) {
@@ -104,6 +123,11 @@ public class SmartAssistantService {
         }
         return containsAny(text, "найди все", "покажи все", "список всех")
             && containsAny(text, "pdf", "пдф", "docx", "word", "jpg", "png", "txt", "загрузк", "документ");
+    }
+
+    private boolean isYouTubeIntent(String text) {
+        return containsAny(text, "youtube", "ютуб", "ютьюб")
+            && containsAny(text, "включи", "поставь", "запусти", "проиграй", "открой", "найди", "песня", "песню", "трек", "клип", "музык");
     }
 
     private boolean isProblemSolvingIntent(String text) {

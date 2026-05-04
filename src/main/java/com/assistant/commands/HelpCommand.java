@@ -25,6 +25,10 @@ public class HelpCommand implements Command {
         sb.append("  - предыдущая вкладка\n");
         sb.append("  - обнови вкладку\n");
         sb.append("  - открой сайт youtube.com\n\n");
+        sb.append("YouTube и музыка:\n");
+        sb.append("  - включи песню Love Me Not на YouTube\n");
+        sb.append("  - поставь трек Imagine Dragons на ютубе\n\n");
+        sb.append("Если говорите \"включи\" или \"поставь\", AURA откроет первый найденный ролик.\n\n");
 
         sb.append("Новости и спорт:\n");
         sb.append("  - новости\n");

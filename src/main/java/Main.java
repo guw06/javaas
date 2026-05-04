@@ -139,6 +139,11 @@ public class Main {
             "создай word", "создай ворд", "подготовь документ", "сформируй документ"
         ), new WordDocumentCommand());
 
+        commandManager.register("youtube", List.of(
+            "ютуб", "ютьюб", "открой youtube", "включи песню", "поставь песню",
+            "включи музыку", "поставь музыку", "включи трек", "включи клип"
+        ), new YouTubeCommand());
+
         commandManager.register("агент", List.of(
             "agent", "agent mode", "ai agent", "компьютерный агент", "автоматизируй",
             "сделай сама", "самостоятельно", "найди все pdf", "переименуй по дате",
