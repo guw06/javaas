@@ -73,7 +73,6 @@ svg {
     font-size: 0.94rem;
 }
 
-/* Boot */
 .boot-screen {
     position: fixed;
     inset: 0;
@@ -171,7 +170,6 @@ svg {
     50% { transform: scale(1.05); opacity: 1; }
 }
 
-/* Shell */
 .main-ui {
     position: fixed;
     inset: 0;
@@ -331,7 +329,6 @@ svg {
     transform: translateY(-1px);
 }
 
-/* Panels */
 .side-panel {
     position: fixed;
     top: 0;
@@ -466,7 +463,6 @@ svg {
     background: rgba(233, 184, 114, 0.09);
 }
 
-/* Workspace */
 .workspace {
     position: relative;
     z-index: 2;
@@ -757,7 +753,6 @@ svg {
     background: rgba(143, 227, 193, 0.08);
 }
 
-/* Voice rail */
 .right-rail {
     justify-content: space-between;
 }
@@ -869,7 +864,6 @@ svg {
     font: 600 0.82rem var(--font-mono);
 }
 
-/* Responsive */
 @media (max-width: 1080px) {
     .workspace {
         grid-template-columns: minmax(0, 1fr) 240px;

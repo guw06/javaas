@@ -10,23 +10,18 @@ public class ClipboardCommand implements Command {
     @Override
     public String execute(String input) {
         try {
-            // Получаем доступ к системному буферу обмена
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             
-            // Проверяем, есть ли в буфере текстовые данные
             if (!clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
                 return "В буфере обмена сейчас нет текста.";
             }
             
-            // Получаем текст из буфера обмена
             String clipboardText = (String) clipboard.getData(DataFlavor.stringFlavor);
             
-            // Проверяем, не пустой ли текст
             if (clipboardText == null || clipboardText.trim().isEmpty()) {
                 return "Буфер обмена пуст.";
             }
             
-            // Ограничиваем длину текста для вывода (максимум 200 символов)
             if (clipboardText.length() > 200) {
                 clipboardText = clipboardText.substring(0, 200) + "...";
             }

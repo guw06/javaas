@@ -309,7 +309,6 @@ public class WindowsAutomationService {
                 return host.replaceFirst("^www\\.", "");
             }
         } catch (Exception ignored) {
-            // Fall through to light cleanup.
         }
 
         return value

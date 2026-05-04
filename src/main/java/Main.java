@@ -17,22 +17,14 @@ public class Main {
     private static final CommandManager commandManager = new CommandManager();
 
     public static void main(String[] args) {
-        // Инициализируем базу данных
         DatabaseService database = new DatabaseService();
         
-        // Передаем DatabaseService в команды памяти
         RememberCommand.setDatabase(database);
         ReadMemoryCommand.setDatabase(database);
         HistoryCommand.setDatabase(database);
         
-        // Запускаем мониторинг системы
         SystemMonitorService systemMonitor = new SystemMonitorService();
         systemMonitor.startMonitoring();
-
-        // ═══════════════════════════════════════════════════
-        // Регистрация команд с алиасами (синонимами)
-        // Теперь ассистент понимает естественную речь!
-        // ═══════════════════════════════════════════════════
         
         commandManager.register("привет", List.of(
             "здравствуй", "здравствуйте", "добрый день", "добрый вечер",
@@ -213,7 +205,6 @@ public class Main {
         
         Gson gson = new Gson();
         
-        // Создаем Javalin с обслуживанием статических файлов
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
             config.staticFiles.add(staticFileConfig -> {
@@ -233,10 +224,8 @@ public class Main {
             "╚═══════════════════════════════════════════════════════════╝\n"
         );
 
-        // Автоматически открываем браузер
         openBrowser("http://localhost:8080");
 
-        // === REST API ===
         app.get("/ping", ctx -> ctx.result("pong"));
         
         app.post("/api/command", ctx -> {
@@ -288,7 +277,6 @@ public class Main {
             ctx.json(Map.of("message", "История очищена"));
         });
         
-        // Graceful Shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n🛑 Завершение работы...");
             systemMonitor.stopMonitoring();

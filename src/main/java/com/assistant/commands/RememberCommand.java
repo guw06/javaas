@@ -5,7 +5,6 @@ import com.assistant.services.DatabaseService;
 public class RememberCommand implements Command {
     private static DatabaseService database;
     
-    // Статический метод для установки DatabaseService из Main
     public static void setDatabase(DatabaseService db) {
         database = db;
     }
@@ -22,7 +21,6 @@ public class RememberCommand implements Command {
             return "Что мне запомнить?";
         }
         
-        // Сохраняем заметку в базу данных
         database.saveNote(text);
         
         return "Запомнила: " + text;

@@ -2,9 +2,6 @@ package com.assistant.commands;
 
 import com.assistant.services.DatabaseService;
 
-/**
- * Команда "очисти" — очищает заметки из памяти
- */
 public class ClearMemoryCommand implements Command {
     private static DatabaseService database;
     

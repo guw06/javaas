@@ -1,4 +1,4 @@
-ai.provider=gemini
+ai.provider=auto
 
 # Gemini
 gemini.api.key=YOUR_GEMINI_API_KEY

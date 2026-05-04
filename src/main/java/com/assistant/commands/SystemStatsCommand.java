@@ -5,18 +5,14 @@ public class SystemStatsCommand implements Command {
     public String execute(String input) {
         Runtime runtime = Runtime.getRuntime();
         
-        // Информация о памяти
         long totalMemory = runtime.totalMemory();
         long freeMemory = runtime.freeMemory();
         long usedMemory = totalMemory - freeMemory;
         long maxMemory = runtime.maxMemory();
         
         double usedPercentage = (double) usedMemory / totalMemory * 100;
-        
-        // Информация о процессоре
         int availableProcessors = runtime.availableProcessors();
         
-        // Форматируем вывод
         StringBuilder stats = new StringBuilder();
         stats.append("📊 Статистика системы:\n\n");
         stats.append(String.format("💾 Память:\n"));
@@ -27,7 +23,6 @@ public class SystemStatsCommand implements Command {
         stats.append(String.format("🖥️ Процессор:\n"));
         stats.append(String.format("  • Доступно ядер: %d\n", availableProcessors));
         
-        // Предупреждение если память перегружена
         if (usedPercentage >= 90) {
             stats.append("\n⚠️ Внимание: высокая загрузка памяти!");
         }

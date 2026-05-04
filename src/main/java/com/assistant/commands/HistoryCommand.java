@@ -3,9 +3,6 @@ package com.assistant.commands;
 import com.assistant.services.DatabaseService;
 import java.util.List;
 
-/**
- * Команда "история" — показывает историю диалогов из БД
- */
 public class HistoryCommand implements Command {
     private static DatabaseService database;
     

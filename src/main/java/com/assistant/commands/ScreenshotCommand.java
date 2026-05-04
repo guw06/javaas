@@ -9,17 +9,10 @@ public class ScreenshotCommand implements Command {
     @Override
     public String execute(String input) {
         try {
-            // Создаем экземпляр Robot для захвата экрана
             Robot robot = new Robot();
-            
-            // Получаем размер экрана
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle screenRect = new Rectangle(screenSize);
-            
-            // Делаем снимок экрана
             BufferedImage screenshot = robot.createScreenCapture(screenRect);
-            
-            // Сохраняем изображение в корень проекта
             File outputFile = new File("screenshot.png");
             ImageIO.write(screenshot, "png", outputFile);
             

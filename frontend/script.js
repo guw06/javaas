@@ -193,7 +193,6 @@ async function checkConnection() {
         const mem = document.getElementById("system-mem");
         if (mem && data.memory) mem.textContent = `MEM: ${data.memory.percentage}%`;
     } catch {
-        // Status is optional for the visual shell.
     }
 }
 

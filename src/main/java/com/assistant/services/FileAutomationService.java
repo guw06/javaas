@@ -320,7 +320,6 @@ public class FileAutomationService {
                 return "«" + relative.getName(0) + "»";
             }
         } catch (Exception ignored) {
-            // Fall through to a generic human phrase.
         }
         return "«выбранная»";
     }

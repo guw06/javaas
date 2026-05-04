@@ -38,6 +38,20 @@ public class GeminiService {
     private final String openAiApiKey;
     private final String openAiModel;
 
+    private record AiResponse(boolean success, boolean fallbackAllowed, String text) {
+        static AiResponse ok(String text) {
+            return new AiResponse(true, false, text);
+        }
+
+        static AiResponse fail(String text) {
+            return new AiResponse(false, false, text);
+        }
+
+        static AiResponse fallback(String text) {
+            return new AiResponse(false, true, text);
+        }
+    }
+
     public GeminiService() {
         this.client = new OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -58,11 +72,13 @@ public class GeminiService {
             return "Пожалуйста, задайте вопрос.";
         }
 
-        return switch (provider) {
+        AiResponse response = switch (provider) {
             case "openai" -> askOpenAi(prompt);
-            case "gemini" -> askGemini(prompt);
-            default -> "Неизвестный AI-провайдер: " + provider + ". В aura.properties поставьте ai.provider=gemini или ai.provider=openai.";
+            case "gemini", "auto" -> askWithGeminiFallback(prompt);
+            default -> AiResponse.fail("Неизвестный AI-провайдер: " + provider + ". В aura.properties поставьте ai.provider=gemini, ai.provider=openai или ai.provider=auto.");
         };
+
+        return response.text();
     }
 
     public boolean isAvailable() {
@@ -76,16 +92,40 @@ public class GeminiService {
             && !normalized.contains("unauthorized");
     }
 
-    private String askGemini(String prompt) {
+    private AiResponse askWithGeminiFallback(String prompt) {
+        AiResponse geminiResponse = askGemini(prompt);
+        if (geminiResponse.success() || !geminiResponse.fallbackAllowed()) {
+            return geminiResponse;
+        }
+
+        if (!hasValidKey(openAiApiKey, "YOUR_OPENAI_API_KEY")) {
+            return AiResponse.fail("""
+                Сейчас основной AI недоступен, а запасной OpenAI ключ не настроен.
+                Добавьте в aura.properties:
+                openai.api.key=ВАШ_OPENAI_КЛЮЧ
+                openai.model=gpt-5.4-mini
+                После этого перезапустите AURA.
+                """.trim());
+        }
+
+        AiResponse openAiResponse = askOpenAi(prompt);
+        if (openAiResponse.success()) {
+            return openAiResponse;
+        }
+
+        return AiResponse.fail(openAiResponse.text());
+    }
+
+    private AiResponse askGemini(String prompt) {
         if (!hasValidKey(geminiApiKey, "YOUR_GEMINI_API_KEY")) {
-            return """
+            return AiResponse.fallback("""
                 Gemini API ключ не настроен.
                 Добавьте его в aura.properties:
                 ai.provider=gemini
                 gemini.api.key=ВАШ_GEMINI_КЛЮЧ
                 gemini.model=gemini-2.5-flash-lite
                 После этого перезапустите AURA.
-                """.trim();
+                """.trim());
         }
 
         try {
@@ -111,28 +151,28 @@ public class GeminiService {
                 String responseBody = response.body() != null ? response.body().string() : "";
 
                 if (!response.isSuccessful()) {
-                    return buildGeminiErrorMessage(response.code(), responseBody);
+                    return buildGeminiErrorResponse(response.code(), responseBody);
                 }
 
                 return parseGeminiResponse(responseBody);
             }
         } catch (IOException e) {
-            return "Не удалось подключиться к Gemini API. Проверьте интернет и попробуйте ещё раз.";
+            return AiResponse.fallback("Не удалось подключиться к Gemini API. Проверьте интернет и попробуйте ещё раз.");
         } catch (Exception e) {
-            return "Произошла ошибка при обращении к Gemini: " + e.getMessage();
+            return AiResponse.fallback("Произошла ошибка при обращении к Gemini: " + e.getMessage());
         }
     }
 
-    private String askOpenAi(String prompt) {
+    private AiResponse askOpenAi(String prompt) {
         if (!hasValidKey(openAiApiKey, "YOUR_OPENAI_API_KEY")) {
-            return """
+            return AiResponse.fail("""
                 OpenAI API ключ не настроен.
                 Добавьте его в aura.properties:
                 ai.provider=openai
                 openai.api.key=ВАШ_OPENAI_КЛЮЧ
                 openai.model=gpt-5.4-mini
                 После этого перезапустите AURA.
-                """.trim();
+                """.trim());
         }
 
         try {
@@ -151,63 +191,68 @@ public class GeminiService {
                 String responseBody = response.body() != null ? response.body().string() : "";
 
                 if (!response.isSuccessful()) {
-                    return buildOpenAiErrorMessage(response.code(), responseBody);
+                    return AiResponse.fail(buildOpenAiErrorMessage(response.code(), responseBody));
                 }
 
                 return parseOpenAiResponse(responseBody);
             }
         } catch (IOException e) {
-            return "Не удалось подключиться к OpenAI API. Проверьте интернет и попробуйте ещё раз.";
+            return AiResponse.fail("Не удалось подключиться к OpenAI API. Проверьте интернет и попробуйте ещё раз.");
         } catch (Exception e) {
-            return "Произошла ошибка при обращении к OpenAI: " + e.getMessage();
+            return AiResponse.fail("Произошла ошибка при обращении к OpenAI: " + e.getMessage());
         }
     }
 
-    private String parseGeminiResponse(String responseBody) {
+    private AiResponse parseGeminiResponse(String responseBody) {
         try {
             JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
             if (jsonResponse == null || !jsonResponse.has("candidates")) {
-                return "Gemini вернул пустой ответ. Попробуйте переформулировать вопрос.";
+                return AiResponse.fallback("Gemini вернул пустой ответ. Попробуйте переформулировать вопрос.");
             }
 
             JsonArray candidates = jsonResponse.getAsJsonArray("candidates");
             if (candidates == null || candidates.isEmpty()) {
-                return "Gemini не дал текстового ответа. Попробуйте другой запрос.";
+                return AiResponse.fallback("Gemini не дал текстового ответа. Попробуйте другой запрос.");
             }
 
             JsonObject firstCandidate = candidates.get(0).getAsJsonObject();
             JsonObject content = firstCandidate.getAsJsonObject("content");
             JsonArray parts = content != null ? content.getAsJsonArray("parts") : null;
             if (parts == null || parts.isEmpty()) {
-                return "Gemini вернул пустой текст.";
+                return AiResponse.fallback("Gemini вернул пустой текст.");
             }
 
             JsonObject firstPart = parts.get(0).getAsJsonObject();
-            return firstPart.has("text")
-                ? firstPart.get("text").getAsString().trim()
-                : "Gemini не вернул текст.";
+            if (!firstPart.has("text")) {
+                return AiResponse.fallback("Gemini не вернул текст.");
+            }
+
+            String text = firstPart.get("text").getAsString().trim();
+            return text.isBlank()
+                ? AiResponse.fallback("Gemini вернул пустой текст.")
+                : AiResponse.ok(text);
         } catch (Exception e) {
-            return "Не удалось разобрать ответ Gemini.";
+            return AiResponse.fallback("Не удалось разобрать ответ Gemini.");
         }
     }
 
-    private String parseOpenAiResponse(String responseBody) {
+    private AiResponse parseOpenAiResponse(String responseBody) {
         try {
             JsonObject root = gson.fromJson(responseBody, JsonObject.class);
             if (root == null) {
-                return "OpenAI вернул пустой ответ.";
+                return AiResponse.fail("OpenAI вернул пустой ответ.");
             }
 
             if (root.has("output_text") && !root.get("output_text").isJsonNull()) {
                 String directText = root.get("output_text").getAsString().trim();
                 if (!directText.isBlank()) {
-                    return directText;
+                    return AiResponse.ok(directText);
                 }
             }
 
             JsonArray output = root.getAsJsonArray("output");
             if (output == null || output.isEmpty()) {
-                return "OpenAI не дал текстового ответа. Попробуйте другой запрос.";
+                return AiResponse.fail("OpenAI не дал текстового ответа. Попробуйте другой запрос.");
             }
 
             StringBuilder text = new StringBuilder();
@@ -227,10 +272,10 @@ public class GeminiService {
             }
 
             return text.isEmpty()
-                ? "OpenAI вернул ответ без текста."
-                : text.toString().trim();
+                ? AiResponse.fail("OpenAI вернул ответ без текста.")
+                : AiResponse.ok(text.toString().trim());
         } catch (Exception e) {
-            return "Не удалось разобрать ответ OpenAI.";
+            return AiResponse.fail("Не удалось разобрать ответ OpenAI.");
         }
     }
 
@@ -240,16 +285,21 @@ public class GeminiService {
         return GEMINI_API_BASE_URL + encodedModel + ":generateContent?key=" + encodedKey;
     }
 
-    private String buildGeminiErrorMessage(int code, String responseBody) {
+    private AiResponse buildGeminiErrorResponse(int code, String responseBody) {
         String apiMessage = extractApiErrorMessage(responseBody);
 
-        return switch (code) {
+        String message = switch (code) {
             case 400 -> "Gemini отклонил запрос. Возможно, неверное имя модели: " + geminiModel + messageSuffix(apiMessage);
             case 401, 403 -> "Gemini API ключ неправильный, отключён или без доступа. Создайте новый ключ и обновите aura.properties.";
             case 404 -> "Модель Gemini не найдена: " + geminiModel + ". Укажите другую модель через gemini.model.";
-            case 429 -> "Gemini временно не отвечает из-за лимита запросов. Подождите немного или проверьте квоты ключа.";
+            case 429 -> "Основной AI сейчас не отвечает. Попробуйте ещё раз немного позже.";
             case 500, 502, 503, 504 -> "Сервис Gemini временно недоступен. Попробуйте ещё раз через минуту.";
             default -> "Gemini API вернул ошибку " + code + messageSuffix(apiMessage);
+        };
+
+        return switch (code) {
+            case 400, 401, 403, 404, 429, 500, 502, 503, 504 -> AiResponse.fallback(message);
+            default -> AiResponse.fail(message);
         };
     }
 
@@ -260,7 +310,7 @@ public class GeminiService {
             case 400 -> "OpenAI отклонил запрос. Возможно, неверное имя модели: " + openAiModel + messageSuffix(apiMessage);
             case 401, 403 -> "OpenAI API ключ неправильный, отключён или без доступа. Обновите openai.api.key в aura.properties.";
             case 404 -> "Модель OpenAI не найдена: " + openAiModel + ". Укажите другую модель через openai.model.";
-            case 429 -> "OpenAI временно не отвечает из-за лимита запросов или квоты. Проверьте лимиты аккаунта.";
+            case 429 -> "Запасной AI сейчас тоже не ответил. Проверьте доступ OpenAI или попробуйте немного позже.";
             case 500, 502, 503, 504 -> "Сервис OpenAI временно недоступен. Попробуйте ещё раз через минуту.";
             default -> "OpenAI API вернул ошибку " + code + messageSuffix(apiMessage);
         };

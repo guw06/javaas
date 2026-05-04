@@ -6,7 +6,6 @@ import java.util.List;
 public class ReadMemoryCommand implements Command {
     private static DatabaseService database;
     
-    // Статический метод для установки DatabaseService из Main
     public static void setDatabase(DatabaseService db) {
         database = db;
     }
@@ -17,14 +16,12 @@ public class ReadMemoryCommand implements Command {
             return "Ошибка: база данных не инициализирована";
         }
         
-        // Получаем все заметки из базы данных
         List<String> notes = database.getAllNotes();
         
         if (notes == null || notes.isEmpty()) {
             return "Моя память пуста";
         }
         
-        // Форматируем вывод
         StringBuilder result = new StringBuilder("📝 Вот что я помню:\n\n");
         
         for (int i = 0; i < notes.size(); i++) {

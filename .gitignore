@@ -1,6 +1,10 @@
 aura.properties
 .env
 *.local.properties
+*.db
 target/
 *.class
 jarvis.db
+screenshot.png
+.sixth/
+.vscode/

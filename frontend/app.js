@@ -166,7 +166,6 @@ function toggleContinuousMode() {
         try {
             recognition.start();
         } catch {
-            // Recognition can already be running.
         }
         mic?.classList.add("continuous");
         badge?.classList.add("active");
@@ -175,7 +174,6 @@ function toggleContinuousMode() {
         try {
             recognition.stop();
         } catch {
-            // Recognition can already be stopped.
         }
         mic?.classList.remove("continuous", "listening");
         badge?.classList.remove("active");

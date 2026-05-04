@@ -3,9 +3,6 @@ package com.assistant.commands;
 import java.time.LocalTime;
 import java.util.Random;
 
-/**
- * Приветствие — разнообразные ответы в зависимости от времени суток
- */
 public class HelloCommand implements Command {
     private static final Random random = new Random();
     
