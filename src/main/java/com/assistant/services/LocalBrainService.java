@@ -1,12 +1,18 @@
 package com.assistant.services;
 
 import java.time.LocalDate;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 public class LocalBrainService {
+    private static final Path KNOWLEDGE_FILE = Path.of("knowledge", "aura-knowledge.tsv");
+
     private final Map<String, String> knowledge = new LinkedHashMap<>();
 
     public LocalBrainService() {
@@ -24,6 +30,7 @@ public class LocalBrainService {
         knowledge.put("bluetooth", "Bluetooth — беспроводная связь на небольшом расстоянии: наушники, мышки, клавиатуры, телефоны и другие устройства.");
         knowledge.put("казахстан", "Казахстан — страна в Центральной Азии. Столица — Астана. Государственный язык — казахский, русский широко используется в общении.");
         knowledge.put("япония", "Япония — островное государство в Восточной Азии. Столица — Токио. Официальный язык — японский.");
+        loadKnowledgeFile();
     }
 
     public Optional<String> process(String input) {
@@ -124,6 +131,27 @@ public class LocalBrainService {
         }
 
         return Optional.empty();
+    }
+
+    private void loadKnowledgeFile() {
+        if (!Files.isRegularFile(KNOWLEDGE_FILE)) {
+            return;
+        }
+
+        try {
+            for (String line : Files.readAllLines(KNOWLEDGE_FILE, StandardCharsets.UTF_8)) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parts = line.split("\\t", 2);
+                if (parts.length == 2 && !parts[0].isBlank() && !parts[1].isBlank()) {
+                    knowledge.put(normalize(parts[0]), parts[1].trim());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Knowledge base read error: " + e.getMessage());
+        }
     }
 
     private boolean looksLikeDefinitionQuestion(String text) {

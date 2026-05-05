@@ -77,7 +77,20 @@ public class HelpCommand implements Command {
         sb.append("Память:\n");
         sb.append("  - запомни [текст]\n");
         sb.append("  - вспомни\n");
+        sb.append("  - меня зовут Диас\n");
+        sb.append("  - я живу в Астане\n");
+        sb.append("  - что ты знаешь обо мне\n");
         sb.append("  - история\n\n");
+
+        sb.append("Напоминания:\n");
+        sb.append("  - напомни через 10 минут проверить чай\n");
+        sb.append("  - напомни завтра в 18:00 сделать домашку\n");
+        sb.append("  - покажи напоминания\n\n");
+
+        sb.append("Локальные знания:\n");
+        sb.append("  - что такое frontend\n");
+        sb.append("  - что такое backend\n");
+        sb.append("  - объясни JARVIS\n\n");
 
         sb.append("Если это обычный вопрос, AURA ответит через подключенную модель.");
         return sb.toString();

@@ -44,6 +44,8 @@ function initApp() {
     initSystemClock();
     checkConnection();
     setInterval(checkConnection, 5000);
+    pollReminders();
+    setInterval(pollReminders, 15000);
     setupVoiceControls();
 
     addSystemMessage(`${ASSISTANT_NAME} online. Канал открыт.`);
@@ -192,6 +194,23 @@ async function checkConnection() {
         const data = await response.json();
         const mem = document.getElementById("system-mem");
         if (mem && data.memory) mem.textContent = `MEM: ${data.memory.percentage}%`;
+    } catch {
+    }
+}
+
+async function pollReminders() {
+    if (!isOnline) return;
+
+    try {
+        const response = await fetch("/api/reminders/due", { cache: "no-cache" });
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const reminders = Array.isArray(data.reminders) ? data.reminders : [];
+        reminders.forEach((reminder) => {
+            addMessage(reminder, false);
+            if (window.speak && voiceEnabled) window.speak(reminder);
+        });
     } catch {
     }
 }

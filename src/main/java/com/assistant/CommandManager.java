@@ -1,8 +1,12 @@
 package com.assistant;
 
 import com.assistant.commands.Command;
+import com.assistant.services.DatabaseService;
 import com.assistant.services.GeminiService;
+import com.assistant.services.IntentRouterService;
+import com.assistant.services.IntentRouterService.Intent;
 import com.assistant.services.LocalBrainService;
+import com.assistant.services.ProfileMemoryService;
 import com.assistant.services.SmartAssistantService;
 
 import java.util.ArrayList;
@@ -31,16 +35,25 @@ public class CommandManager {
 
     private final List<CommandEntry> entries = new ArrayList<>();
     private final GeminiService geminiService;
+    private final IntentRouterService intentRouterService;
     private final LocalBrainService localBrainService;
     private final SmartAssistantService smartAssistantService;
+    private ProfileMemoryService profileMemoryService;
     private String lastUserInput = "";
     private String lastAssistantResponse = "";
     private String lastActionableInput = "";
 
     public CommandManager() {
         this.geminiService = new GeminiService();
+        this.intentRouterService = new IntentRouterService();
         this.localBrainService = new LocalBrainService();
         this.smartAssistantService = new SmartAssistantService();
+    }
+
+    public void setDatabase(DatabaseService database) {
+        if (database != null) {
+            this.profileMemoryService = new ProfileMemoryService(database);
+        }
     }
 
     public void register(String keyword, Command command) {
@@ -85,10 +98,29 @@ public class CommandManager {
     }
 
     private String processCurrent(String input, String normalizedInput) {
+        IntentRouterService.IntentDecision intent = intentRouterService.classify(input);
+        System.out.printf("AURA intent: %s %.2f (%s)%n", intent.intent(), intent.confidence(), intent.reason());
+
+        if (profileMemoryService != null) {
+            Optional<String> profileResult = profileMemoryService.process(input);
+            if (profileResult.isPresent()) {
+                System.out.println("AURA profile memory matched");
+                return profileResult.get();
+            }
+        }
+
         Optional<String> smartResult = smartAssistantService.process(input);
         if (smartResult.isPresent()) {
             System.out.println("AURA smart intent matched");
             return smartResult.get();
+        }
+
+        if (intent.intent() == Intent.KNOWLEDGE && intent.confidence() >= 0.70) {
+            Optional<String> localBrainResult = localBrainService.process(input);
+            if (localBrainResult.isPresent()) {
+                System.out.println("AURA local brain matched");
+                return localBrainResult.get();
+            }
         }
 
         Optional<CommandMatch> commandMatch = findBestCommand(normalizedInput);
@@ -105,7 +137,10 @@ public class CommandManager {
         }
 
         try {
-            return geminiService.ask(smartAssistantService.buildFallbackPrompt(input, lastUserInput, lastAssistantResponse));
+            String profileContext = profileMemoryService == null
+                ? "Профиль пользователя недоступен."
+                : profileMemoryService.buildContext();
+            return geminiService.ask(smartAssistantService.buildFallbackPrompt(input, lastUserInput, lastAssistantResponse, profileContext));
         } catch (Exception e) {
             System.err.println("Gemini error: " + e.getMessage());
             return "Я не смогла разобрать запрос. Попробуйте сказать проще или напишите: помощь.";
@@ -193,6 +228,10 @@ public class CommandManager {
         String normalizedInput = normalizeText(input);
         if (isActionLike(normalizedInput)) {
             lastActionableInput = input == null ? "" : input.trim();
+        }
+
+        if (profileMemoryService != null) {
+            profileMemoryService.captureSilently(input);
         }
     }
 

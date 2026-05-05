@@ -7,6 +7,7 @@ import com.assistant.CommandManager;
 import com.assistant.commands.*;
 import com.assistant.services.SystemMonitorService;
 import com.assistant.services.DatabaseService;
+import com.assistant.services.ReminderService;
 
 import java.awt.Desktop;
 import java.net.URI;
@@ -18,6 +19,8 @@ public class Main {
 
     public static void main(String[] args) {
         DatabaseService database = new DatabaseService();
+        commandManager.setDatabase(database);
+        ReminderService reminderService = new ReminderService(database);
         
         RememberCommand.setDatabase(database);
         ReadMemoryCommand.setDatabase(database);
@@ -147,6 +150,11 @@ public class Main {
             "сделай сама", "самостоятельно", "найди все pdf", "переименуй по дате",
             "разложи загрузки", "организуй загрузки"
         ), new ComputerAgentCommand());
+
+        commandManager.register("напомни", List.of(
+            "напоминание", "напоминания", "reminder", "remind me", "покажи напоминания",
+            "список напоминаний", "через минут", "через час", "завтра в", "сегодня в"
+        ), new ReminderCommand(reminderService));
         
         commandManager.register("запомни", List.of(
             "сохрани", "записи", "запиши", "добавь заметку",
@@ -157,7 +165,7 @@ public class Main {
         commandManager.register("вспомни", List.of(
             "что помнишь", "что ты помнишь", "что запомнил",
             "покажи заметки", "заметки", "мои записи", "мои заметки",
-            "что сохранено", "напомни", "remind", "memories"
+            "что сохранено", "remind", "memories"
         ), new ReadMemoryCommand());
         
         commandManager.register("скриншот", List.of(
@@ -248,6 +256,8 @@ public class Main {
             List<String> history = database.getHistory(limit);
             ctx.json(Map.of("history", history));
         });
+
+        app.get("/api/reminders/due", ctx -> ctx.json(Map.of("reminders", reminderService.pollDueReminders())));
         
         app.get("/api/status", ctx -> {
             Runtime runtime = Runtime.getRuntime();

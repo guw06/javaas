@@ -90,6 +90,10 @@ public class SmartAssistantService {
     }
 
     public String buildFallbackPrompt(String input, String previousUserInput, String previousAssistantResponse) {
+        return buildFallbackPrompt(input, previousUserInput, previousAssistantResponse, "Профиль пользователя пока пуст.");
+    }
+
+    public String buildFallbackPrompt(String input, String previousUserInput, String previousAssistantResponse, String profileContext) {
         String context = previousUserInput == null || previousUserInput.isBlank()
             ? "Контекста прошлого сообщения нет."
             : """
@@ -113,9 +117,11 @@ public class SmartAssistantService {
             Не показывай длинные технические пути к файлам или служебные URL без необходимости.
             Учитывай короткий контекст диалога:
             %s
+            Учитывай профиль:
+            %s
 
             Пользователь: %s
-            """.formatted(context, input);
+            """.formatted(context, profileContext == null ? "Профиль пользователя пока пуст." : profileContext, input);
     }
 
     private boolean isMathIntent(String text) {
