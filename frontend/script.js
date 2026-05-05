@@ -47,6 +47,7 @@ function initApp() {
     pollReminders();
     setInterval(pollReminders, 15000);
     setupVoiceControls();
+    setupAuraSettings();
 
     addSystemMessage(`${ASSISTANT_NAME} online. Канал открыт.`);
     setTimeout(() => {
@@ -274,6 +275,46 @@ function setupVoiceControls() {
 
     document.getElementById("test-voice")?.addEventListener("click", () => {
         if (window.speak) window.speak("Привет. Я AURA. Так звучит мой новый голос.");
+    });
+}
+
+async function setupAuraSettings() {
+    const cityEl = document.getElementById("aura-city");
+    const styleEl = document.getElementById("aura-answer-style");
+    const personalityEl = document.getElementById("aura-personality");
+    const saveButton = document.getElementById("save-aura-settings");
+
+    if (!cityEl || !styleEl || !personalityEl || !saveButton) return;
+
+    try {
+        const response = await fetch("/api/settings", { cache: "no-cache" });
+        if (response.ok) {
+            const settings = await response.json();
+            cityEl.value = settings.city || "";
+            styleEl.value = settings.answer_style || "коротко";
+            personalityEl.value = settings.personality || "живая, дружелюбная, спокойная";
+        }
+    } catch {
+    }
+
+    saveButton.addEventListener("click", async () => {
+        const payload = {
+            city: cityEl.value.trim(),
+            answer_style: styleEl.value,
+            personality: personalityEl.value
+        };
+
+        try {
+            const response = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            addSystemMessage(response.ok ? "Настройки AURA сохранены." : "Не смогла сохранить настройки.");
+        } catch {
+            addSystemMessage("Backend недоступен, настройки не сохранены.");
+        }
     });
 }
 

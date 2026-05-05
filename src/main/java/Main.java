@@ -8,6 +8,7 @@ import com.assistant.commands.*;
 import com.assistant.services.SystemMonitorService;
 import com.assistant.services.DatabaseService;
 import com.assistant.services.ReminderService;
+import com.assistant.services.SystemTrayService;
 
 import java.awt.Desktop;
 import java.net.URI;
@@ -21,6 +22,7 @@ public class Main {
         DatabaseService database = new DatabaseService();
         commandManager.setDatabase(database);
         ReminderService reminderService = new ReminderService(database);
+        SystemTrayService trayService = new SystemTrayService();
         
         RememberCommand.setDatabase(database);
         ReadMemoryCommand.setDatabase(database);
@@ -75,7 +77,7 @@ public class Main {
             "последние новости", "что нового", "новость", "news",
             "что в мире", "что происходит", "свежие новости",
             "какие новости", "расскажи новости", "покажи новости", "новостная сводка",
-            "сводка дня", "новости про", "новости о"
+            "новости про", "новости о"
         ), new NewsCommand());
 
         commandManager.register("спорт", List.of(
@@ -155,6 +157,52 @@ public class Main {
             "напоминание", "напоминания", "reminder", "remind me", "покажи напоминания",
             "список напоминаний", "через минут", "через час", "завтра в", "сегодня в"
         ), new ReminderCommand(reminderService));
+
+        commandManager.register("настройки", List.of(
+            "покажи настройки", "ответь коротко", "отвечай коротко", "отвечай подробно",
+            "общайся как человек", "по человечески", "поставь город", "мой город",
+            "характер", "стиль общения", "режим общения"
+        ), new AssistantSettingsCommand(database));
+
+        commandManager.register("проверь ai", List.of(
+            "проверь нейросеть", "диагностика ai", "диагностика ии", "проверь openai",
+            "проверь gemini", "проверка ключа", "ai status", "статус нейросети"
+        ), new AiDiagnosticsCommand());
+
+        commandManager.register("задача", List.of(
+            "задачи", "todo", "дело", "дела", "добавь задачу", "создай задачу",
+            "покажи задачи", "список задач", "готово задача", "отметь задачу"
+        ), new TasksCommand(database));
+
+        commandManager.register("сценарий", List.of(
+            "сценарии", "режим учебы", "режим работы", "режим отдыха", "режим кодинга",
+            "утренний режим", "запусти сценарий", "включи сценарий", "покажи сценарии"
+        ), new RoutineCommand(database));
+
+        commandManager.register("привычка", List.of(
+            "привычки", "покажи привычки", "когда слышишь", "запомни привычку"
+        ), new HabitsCommand(database));
+
+        commandManager.register("научи команду", List.of(
+            "когда я скажу", "обучи команду", "обученная команда", "обученные команды",
+            "покажи обученные команды", "команда"
+        ), new TeachCommand(database));
+
+        commandManager.register("поиск файлов", List.of(
+            "найди файл", "найди документ", "найди последний", "найди последнюю",
+            "семантический поиск", "поиск по файлам", "открой найденный файл",
+            "открой последний документ", "открой последний word", "последний ворд"
+        ), new FileSearchCommand());
+
+        commandManager.register("сводка дня", List.of(
+            "утренняя сводка", "мой день", "план дня", "что сегодня", "начни день",
+            "ежедневная сводка"
+        ), new DailySummaryCommand(database));
+
+        commandManager.register("журнал действий", List.of(
+            "что ты сегодня делала", "что ты сегодня сделала", "что ты делала", "что ты сделала", "лог действий", "логи действий",
+            "покажи журнал", "покажи действия", "история действий"
+        ), new ActionLogCommand(database));
         
         commandManager.register("запомни", List.of(
             "сохрани", "записи", "запиши", "добавь заметку",
@@ -232,13 +280,14 @@ public class Main {
             "╔═══════════════════════════════════════════════════════════╗\n" +
             "║  🤖 J.A.R.V.I.S. — Персональный ИИ-Ассистент           ║\n" +
             "║  🚀 Сервер запущен на порту 8080                        ║\n" +
-            "║  ⚡ Java 21 | Virtual Threads | Gemini AI               ║\n" +
+            "║  ⚡ Java 21 | Gemini/OpenAI | Local Brain               ║\n" +
             "║  📝 Команд: " + commandManager.getCommandCount() + " | Алиасов: 150+                       ║\n" +
             "║  🔗 http://localhost:8080                                ║\n" +
             "╚═══════════════════════════════════════════════════════════╝\n"
         );
 
         openBrowser("http://localhost:8080");
+        trayService.install("http://localhost:8080");
 
         app.get("/ping", ctx -> ctx.result("pong"));
         
@@ -255,6 +304,27 @@ public class Main {
             int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(50);
             List<String> history = database.getHistory(limit);
             ctx.json(Map.of("history", history));
+        });
+
+        app.get("/api/settings", ctx -> ctx.json(database.getSettings()));
+
+        app.post("/api/settings", ctx -> {
+            Map<?, ?> payload = gson.fromJson(ctx.body(), Map.class);
+            if (payload != null) {
+                payload.forEach((key, value) -> {
+                    if (key != null && value != null && !String.valueOf(value).isBlank()) {
+                        database.saveSetting(String.valueOf(key), String.valueOf(value));
+                    }
+                });
+            }
+            ctx.json(Map.of("settings", database.getSettings()));
+        });
+
+        app.get("/api/tasks", ctx -> ctx.json(Map.of("tasks", database.getTasks(false, 50))));
+
+        app.get("/api/actions", ctx -> {
+            int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(50);
+            ctx.json(Map.of("actions", database.getActionLog(limit)));
         });
 
         app.get("/api/reminders/due", ctx -> ctx.json(Map.of("reminders", reminderService.pollDueReminders())));
@@ -296,6 +366,7 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n🛑 Завершение работы...");
             systemMonitor.stopMonitoring();
+            trayService.remove();
             database.close();
             app.stop();
             System.out.println("✅ Все ресурсы освобождены. До свидания!");

@@ -64,8 +64,8 @@
         <aside id="settings-panel" class="side-panel settings-panel">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Voice</p>
-                    <h2>Настройки голоса</h2>
+                    <p class="eyebrow">Voice & Brain</p>
+                    <h2>Настройки AURA</h2>
                 </div>
                 <button class="panel-close" data-panel="settings-panel" type="button" aria-label="Закрыть">×</button>
             </div>
@@ -87,6 +87,34 @@
                     <input type="range" id="voice-volume" class="control-range" min="0" max="1" step="0.1" value="1.0">
                 </label>
                 <button id="test-voice" class="primary-panel-button" type="button">Проверить голос</button>
+
+                <div class="panel-divider"></div>
+
+                <label class="field">
+                    <span>Город для сводок</span>
+                    <input id="aura-city" class="control-input" type="text" placeholder="Например: Алматы">
+                </label>
+                <label class="field">
+                    <span>Стиль ответов</span>
+                    <select id="aura-answer-style" class="control-select">
+                        <option value="коротко">коротко</option>
+                        <option value="подробно">подробно</option>
+                        <option value="баланс">баланс</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Характер</span>
+                    <select id="aura-personality" class="control-select">
+                        <option value="живая, дружелюбная, спокойная">живая и спокойная</option>
+                        <option value="собранная, короткая, деловая">деловая</option>
+                        <option value="мягкая, заботливая, разговорная">мягкая</option>
+                    </select>
+                </label>
+                <button id="save-aura-settings" class="primary-panel-button" type="button">Сохранить настройки</button>
+                <div class="mini-command-row">
+                    <button class="command-item" data-cmd="проверь нейросеть">Проверить AI</button>
+                    <button class="command-item" data-cmd="покажи настройки">Показать</button>
+                </div>
             </div>
         </aside>
 
@@ -125,6 +153,7 @@
                     <h3>Файлы и память</h3>
                     <button class="command-item" data-cmd="создай файл aura-note.txt">Создать файл</button>
                     <button class="command-item" data-cmd="создай Word документ на тему искусственный интеллект">Word документ</button>
+                    <button class="command-item" data-cmd="найди последний Word документ">Найти Word</button>
                     <button class="command-item" data-cmd="создай папку aura-project">Создать папку</button>
                     <button class="command-item" data-cmd="агент найди все PDF в загрузках">Agent: найти PDF</button>
                     <button class="command-item" data-cmd="агент найди все PDF в проекте">Agent: проект</button>
@@ -133,6 +162,18 @@
                     <button class="command-item" data-cmd="вспомни">Вспомнить</button>
                     <button class="command-item" data-cmd="история">История</button>
                     <button class="command-item" data-cmd="помощь">Помощь</button>
+                </section>
+                <section>
+                    <h3>Организация</h3>
+                    <button class="command-item" data-cmd="сводка дня">Сводка дня</button>
+                    <button class="command-item" data-cmd="добавь задачу закончить проект">Задача</button>
+                    <button class="command-item" data-cmd="покажи задачи">Список задач</button>
+                    <button class="command-item" data-cmd="режим учебы">Режим учебы</button>
+                    <button class="command-item" data-cmd="покажи сценарии">Сценарии</button>
+                    <button class="command-item" data-cmd="покажи привычки">Привычки</button>
+                    <button class="command-item" data-cmd="покажи обученные команды">Обучение</button>
+                    <button class="command-item" data-cmd="что ты сегодня делала">Журнал</button>
+                    <button class="command-item" data-cmd="проверь нейросеть">AI статус</button>
                 </section>
             </div>
         </aside>
@@ -152,6 +193,8 @@
                         <span>браузер</span>
                         <span>система</span>
                         <span>agent mode</span>
+                        <span>сценарии</span>
+                        <span>задачи</span>
                     </div>
                 </div>
             </section>
@@ -186,6 +229,8 @@
                         <button class="hint-chip" data-cmd="найди новости про ИИ">найди ИИ</button>
                         <button class="hint-chip" data-cmd="запомни идею проекта">запомни</button>
                         <button class="hint-chip" data-cmd="агент найди все PDF в загрузках">agent</button>
+                        <button class="hint-chip" data-cmd="сводка дня">сводка</button>
+                        <button class="hint-chip" data-cmd="покажи задачи">задачи</button>
                     </div>
                 </div>
             </section>
@@ -206,7 +251,7 @@
                     <p class="eyebrow">Runtime</p>
                     <div class="meter-row"><span>Backend</span><b id="runtime-backend">active</b></div>
                     <div class="meter-row"><span>Voice</span><b id="runtime-voice">ready</b></div>
-                    <div class="meter-row"><span>Gemini</span><b>linked</b></div>
+                    <div class="meter-row"><span>AI</span><b>auto</b></div>
                 </div>
             </section>
         </main>

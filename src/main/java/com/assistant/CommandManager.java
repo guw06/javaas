@@ -12,6 +12,7 @@ import com.assistant.services.SmartAssistantService;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -38,10 +39,12 @@ public class CommandManager {
     private final IntentRouterService intentRouterService;
     private final LocalBrainService localBrainService;
     private final SmartAssistantService smartAssistantService;
+    private DatabaseService database;
     private ProfileMemoryService profileMemoryService;
     private String lastUserInput = "";
     private String lastAssistantResponse = "";
     private String lastActionableInput = "";
+    private String pendingDangerousInput = "";
 
     public CommandManager() {
         this.geminiService = new GeminiService();
@@ -52,6 +55,7 @@ public class CommandManager {
 
     public void setDatabase(DatabaseService database) {
         if (database != null) {
+            this.database = database;
             this.profileMemoryService = new ProfileMemoryService(database);
         }
     }
@@ -85,19 +89,32 @@ public class CommandManager {
         }
 
         String normalizedInput = normalizeText(input);
+        Optional<String> confirmationResult = processDangerousConfirmation(input, normalizedInput);
+        if (confirmationResult.isPresent()) {
+            return finish(input, confirmationResult.get());
+        }
+
         Optional<String> followUpResult = processFollowUp(normalizedInput);
         if (followUpResult.isPresent()) {
-            String result = followUpResult.get();
-            rememberConversation(input, result);
-            return result;
+            return finish(input, followUpResult.get());
         }
 
         String result = processCurrent(input, normalizedInput);
-        rememberConversation(input, result);
-        return result;
+        return finish(input, result);
     }
 
     private String processCurrent(String input, String normalizedInput) {
+        return processCurrent(input, normalizedInput, false);
+    }
+
+    private String processCurrent(String input, String normalizedInput, boolean skipStoredActions) {
+        if (!skipStoredActions) {
+            Optional<String> storedAction = processStoredActions(normalizedInput);
+            if (storedAction.isPresent()) {
+                return storedAction.get();
+            }
+        }
+
         IntentRouterService.IntentDecision intent = intentRouterService.classify(input);
         System.out.printf("AURA intent: %s %.2f (%s)%n", intent.intent(), intent.confidence(), intent.reason());
 
@@ -137,14 +154,93 @@ public class CommandManager {
         }
 
         try {
-            String profileContext = profileMemoryService == null
-                ? "Профиль пользователя недоступен."
-                : profileMemoryService.buildContext();
+            String profileContext = buildPersonalContext();
             return geminiService.ask(smartAssistantService.buildFallbackPrompt(input, lastUserInput, lastAssistantResponse, profileContext));
         } catch (Exception e) {
             System.err.println("Gemini error: " + e.getMessage());
             return "Я не смогла разобрать запрос. Попробуйте сказать проще или напишите: помощь.";
         }
+    }
+
+    private Optional<String> processDangerousConfirmation(String input, String normalizedInput) {
+        if (!pendingDangerousInput.isBlank()) {
+            if (isDangerousConfirmation(normalizedInput)) {
+                String confirmedInput = pendingDangerousInput;
+                pendingDangerousInput = "";
+                String result = processCurrent(confirmedInput, normalizeText(confirmedInput));
+                return Optional.of("Подтверждение принято. " + result);
+            }
+            if (isCancelConfirmation(normalizedInput)) {
+                pendingDangerousInput = "";
+                return Optional.of("Отменила опасное действие. Ничего не меняю.");
+            }
+            pendingDangerousInput = "";
+        }
+
+        if (isDangerousAction(normalizedInput)) {
+            pendingDangerousInput = input == null ? "" : input.trim();
+            return Optional.of("Это действие может удалить или очистить важные данные. Я остановилась. Если точно нужно, напиши: да, подтверждаю.");
+        }
+
+        return Optional.empty();
+    }
+
+    private String buildPersonalContext() {
+        StringBuilder context = new StringBuilder();
+        context.append(profileMemoryService == null
+            ? "Профиль пользователя недоступен."
+            : profileMemoryService.buildContext());
+
+        if (database != null) {
+            Map<String, String> settings = database.getSettings();
+            if (!settings.isEmpty()) {
+                context.append("\nНастройки AURA:\n");
+                settings.forEach((key, value) -> context.append("- ").append(key).append(": ").append(value).append("\n"));
+            }
+        }
+
+        return context.toString().trim();
+    }
+
+    private Optional<String> processStoredActions(String normalizedInput) {
+        if (database == null || normalizedInput.isBlank()) {
+            return Optional.empty();
+        }
+
+        Optional<StoredAction> customCommand = findStoredAction(database.getCustomCommands(), normalizedInput, true);
+        if (customCommand.isPresent()) {
+            StoredAction action = customCommand.get();
+            database.logAction("custom_command", action.trigger() + " -> " + action.action());
+            String result = processCurrent(action.action(), normalizeText(action.action()), true);
+            return Optional.of("Выполняю обученную команду «" + action.trigger() + "». " + result);
+        }
+
+        Optional<StoredAction> habit = findStoredAction(database.getHabits(), normalizedInput, false);
+        if (habit.isPresent()) {
+            StoredAction action = habit.get();
+            database.logAction("habit", action.trigger() + " -> " + action.action());
+            String result = processCurrent(action.action(), normalizeText(action.action()), true);
+            return Optional.of("Сработала привычка «" + action.trigger() + "». " + result);
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<StoredAction> findStoredAction(Map<String, String> actions, String normalizedInput, boolean exact) {
+        for (Map.Entry<String, String> entry : actions.entrySet()) {
+            String trigger = normalizeText(entry.getKey());
+            if (trigger.isBlank() || entry.getValue() == null || entry.getValue().isBlank()) {
+                continue;
+            }
+
+            boolean matched = exact
+                ? normalizedInput.equals(trigger)
+                : normalizedInput.equals(trigger) || containsPhrase(normalizedInput, trigger);
+            if (matched) {
+                return Optional.of(new StoredAction(entry.getKey(), entry.getValue()));
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<CommandMatch> findBestCommand(String normalizedInput) {
@@ -235,6 +331,14 @@ public class CommandManager {
         }
     }
 
+    private String finish(String input, String result) {
+        rememberConversation(input, result);
+        if (database != null) {
+            database.logAction("request", compact(input) + " -> " + compact(result));
+        }
+        return result;
+    }
+
     private boolean isAffirmativeFollowUp(String normalizedInput) {
         if (normalizedInput.length() > 60) {
             return false;
@@ -258,7 +362,33 @@ public class CommandManager {
         return containsAny(normalizedInput,
             "открой", "запусти", "включи", "поставь", "проиграй", "найди", "поищи",
             "создай", "удали", "перемести", "переименуй", "разложи", "агент",
-            "посчитай", "реши", "запомни", "сделай", "переведи", "перевод");
+            "посчитай", "реши", "запомни", "сделай", "переведи", "перевод",
+            "задача", "сценарий", "режим", "привычка");
+    }
+
+    private boolean isDangerousAction(String normalizedInput) {
+        boolean destructive = containsAny(normalizedInput, "удали", "удалить", "сотри", "очисти", "забудь");
+        if (!destructive) {
+            return false;
+        }
+
+        return containsAny(normalizedInput,
+            "все", "всю", "полностью", "историю", "память", "заметки",
+            "рабочий стол", "загрузк", "документ", "документы", "папку", "папки",
+            "*.", "проект", "базу", "database"
+        );
+    }
+
+    private boolean isDangerousConfirmation(String normalizedInput) {
+        return normalizedInput.contains("подтверждаю")
+            || normalizedInput.contains("да подтверждаю")
+            || normalizedInput.contains("точно подтверждаю")
+            || normalizedInput.contains("да удали")
+            || normalizedInput.contains("да очисти");
+    }
+
+    private boolean isCancelConfirmation(String normalizedInput) {
+        return containsAny(normalizedInput, "нет", "не надо", "отмена", "отмени", "стоп");
     }
 
     private boolean containsAny(String text, String... values) {
@@ -338,5 +468,8 @@ public class CommandManager {
             .replaceAll("[?!.,;:\"'()\\[\\]{}]", " ")
             .replaceAll("\\s+", " ")
             .trim();
+    }
+
+    private record StoredAction(String trigger, String action) {
     }
 }

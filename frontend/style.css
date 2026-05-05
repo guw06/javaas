@@ -401,7 +401,8 @@ svg {
     font: 600 0.82rem var(--font-mono);
 }
 
-.control-select {
+.control-select,
+.control-input {
     width: 100%;
     min-height: 42px;
     padding: 0 12px;
@@ -412,7 +413,12 @@ svg {
     color: var(--text);
 }
 
-.control-select:focus {
+.control-input::placeholder {
+    color: var(--muted);
+}
+
+.control-select:focus,
+.control-input:focus {
     border-color: rgba(143, 227, 193, 0.45);
 }
 
@@ -432,6 +438,16 @@ svg {
 .primary-panel-button:hover {
     border-color: rgba(143, 227, 193, 0.36);
     background: rgba(143, 227, 193, 0.15);
+}
+
+.panel-divider {
+    height: 1px;
+    margin: 22px 0;
+    background: var(--line);
+}
+
+.mini-command-row {
+    margin-top: 12px;
 }
 
 .command-groups section {

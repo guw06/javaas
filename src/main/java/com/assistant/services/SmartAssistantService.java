@@ -180,7 +180,7 @@ public class SmartAssistantService {
     }
 
     private boolean isNewsIntent(String text) {
-        return containsAny(text, "новости", "новостная сводка", "что нового", "последние события", "сводка дня", "расскажи новости");
+        return containsAny(text, "новости", "новостная сводка", "что нового", "последние события", "расскажи новости");
     }
 
     private boolean isNetworkIntent(String text) {

@@ -92,6 +92,27 @@ public class GeminiService {
             && !normalized.contains("unauthorized");
     }
 
+    public String diagnose() {
+        StringBuilder result = new StringBuilder();
+        result.append("Проверила AI-подключение:\n");
+        result.append("- режим: ").append(provider).append("\n");
+        result.append("- Gemini: ").append(hasValidKey(geminiApiKey, "YOUR_GEMINI_API_KEY") ? "ключ есть" : "ключ не настроен")
+            .append(", модель ").append(geminiModel).append("\n");
+        result.append("- OpenAI: ").append(hasValidKey(openAiApiKey, "YOUR_OPENAI_API_KEY") ? "ключ есть" : "ключ не настроен")
+            .append(", модель ").append(openAiModel).append("\n\n");
+
+        String probe = ask("Ответь только одним словом: ok");
+        String normalized = probe.toLowerCase(Locale.ROOT);
+        boolean healthy = normalized.equals("ok") || normalized.contains("ok");
+        if (healthy) {
+            result.append("AI отвечает. Можно пользоваться обычными вопросами.");
+        } else {
+            result.append("AI сейчас не дал нормальный ответ. Причина без секретов:\n").append(probe);
+        }
+
+        return result.toString();
+    }
+
     private AiResponse askWithGeminiFallback(String prompt) {
         AiResponse geminiResponse = askGemini(prompt);
         if (geminiResponse.success() || !geminiResponse.fallbackAllowed()) {
