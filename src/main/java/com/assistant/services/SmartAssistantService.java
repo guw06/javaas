@@ -10,6 +10,7 @@ import com.assistant.commands.ProblemSolverCommand;
 import com.assistant.commands.ProgramControlCommand;
 import com.assistant.commands.SportsScoreCommand;
 import com.assistant.commands.TaskManagerCommand;
+import com.assistant.commands.TranslationCommand;
 import com.assistant.commands.WordDocumentCommand;
 import com.assistant.commands.YouTubeCommand;
 
@@ -32,6 +33,7 @@ public class SmartAssistantService {
     private final FileControlCommand files = new FileControlCommand();
     private final TaskManagerCommand taskManager = new TaskManagerCommand();
     private final YouTubeCommand youtube = new YouTubeCommand();
+    private final TranslationCommand translation = new TranslationCommand();
 
     public Optional<String> process(String input) {
         String text = normalize(input);
@@ -40,6 +42,9 @@ public class SmartAssistantService {
             return Optional.empty();
         }
 
+        if (isTranslationIntent(text)) {
+            return Optional.of(translation.execute(input));
+        }
         if (isAgentIntent(text)) {
             return Optional.of(computerAgent.execute(input));
         }
@@ -95,6 +100,11 @@ public class SmartAssistantService {
         return """
             Ты AURA, персональная ассистентка для управления компьютером.
             Общайся естественно, тепло и по-человечески, как внимательная девушка-помощница, а не как сухая нейросеть.
+            Отвечай как умный голосовой ассистент: сначала давай полезный ответ, потом короткое пояснение, если нужно.
+            Перед ответом тихо определи намерение пользователя: вопрос, перевод, расчет, поиск, управление компьютером, работа с файлом, память или обычный разговор.
+            Не цепляйся за одно знакомое слово внутри фразы. Например, если пользователь спрашивает "как будет привет на японском", это перевод, а не приветствие.
+            Понимай синонимы, ошибки и разговорные формулировки: "как будет", "что значит", "поставь", "вруби", "найди", "покажи", "сделай", "казхсский" = "казахский".
+            Если пользователь спрашивает факт, термин, перевод или объяснение, отвечай содержательно даже если это не команда управления компьютером.
             У тебя уже есть инструменты: программы, браузер, YouTube-поиск, вкладки, Wi-Fi/Bluetooth, файлы, Word-документы, новости, спорт, память, расчеты и agent mode.
             Не говори "я подключу инструмент" или "давай я добавлю", если ты сама не меняешь код проекта прямо сейчас.
             Если действие еще не поддерживается приложением, скажи коротко: "этот режим пока не подключен".
@@ -113,6 +123,24 @@ public class SmartAssistantService {
             || MATH_PATTERN.matcher(text).matches();
     }
 
+    private boolean isTranslationIntent(String text) {
+        boolean mentionsLanguage = containsAny(text,
+            "на япон", "по япон", "на рус", "по рус", "на англ", "по англ",
+            "на каз", "по каз", "қазақ", "казакша", "kazakh",
+            "японский", "русский", "английский", "казахский", "казх",
+            "китайский", "корейский", "турецкий", "немецкий", "французский", "испанский"
+        );
+        if (!mentionsLanguage) {
+            return false;
+        }
+
+        return containsAny(text,
+            "переведи", "перевод", "перевести", "как будет", "как сказать",
+            "что значит", "что означает", "слово", "фраза", "по русски", "по-японски",
+            "на казхсский", "на казхском"
+        ) || text.matches("^[\\p{L}\\s'-]{2,40}\\s+(на|по)\\s+[\\p{L}a-zA-Z-]+.*$");
+    }
+
     private boolean isAgentIntent(String text) {
         if (containsAny(text, "агент", "agent mode", "ai agent", "автоматизируй", "сделай сама", "самостоятельно")) {
             return true;
@@ -127,7 +155,7 @@ public class SmartAssistantService {
 
     private boolean isYouTubeIntent(String text) {
         return containsAny(text, "youtube", "ютуб", "ютьюб")
-            && containsAny(text, "включи", "поставь", "запусти", "проиграй", "открой", "найди", "песня", "песню", "трек", "клип", "музык");
+            && containsAny(text, "включи", "вруби", "поставь", "запусти", "проиграй", "открой", "найди", "песня", "песню", "трек", "клип", "музык");
     }
 
     private boolean isProblemSolvingIntent(String text) {
@@ -135,8 +163,8 @@ public class SmartAssistantService {
     }
 
     private boolean isWordDocumentIntent(String text) {
-        return containsAny(text, "word", "ворд", "docx", "документ")
-            && containsAny(text, "создай", "сделай", "напиши", "сформируй", "подготовь");
+        return containsAny(text, "word", "ворд", "docx", "документ", "реферат", "отчет")
+            && containsAny(text, "создай", "сделай", "напиши", "сформируй", "подготовь", "составь");
     }
 
     private boolean isSportsIntent(String text) {
@@ -146,7 +174,7 @@ public class SmartAssistantService {
     }
 
     private boolean isNewsIntent(String text) {
-        return containsAny(text, "новости", "новостная сводка", "что нового", "последние события", "сводка дня");
+        return containsAny(text, "новости", "новостная сводка", "что нового", "последние события", "сводка дня", "расскажи новости");
     }
 
     private boolean isNetworkIntent(String text) {
@@ -158,16 +186,16 @@ public class SmartAssistantService {
     }
 
     private boolean isBrowserIntent(String text) {
-        return containsAny(text, "вкладк", "браузер", "сайт", "адресная строка", "перейди на", "открой youtube", "открой google");
+        return containsAny(text, "вкладк", "браузер", "сайт", "адресная строка", "перейди на", "зайди на", "открой youtube", "открой google");
     }
 
     private boolean isFileIntent(String text) {
         return containsAny(text, "файл", "папк", "директор")
-            && containsAny(text, "создай", "удали", "перемести", "перенеси", "сделай", "создать", "удалить");
+            && containsAny(text, "создай", "удали", "сотри", "убери", "перемести", "перенеси", "сделай", "создать", "удалить");
     }
 
     private boolean isProgramIntent(String text) {
-        return containsAny(text, "открой", "запусти", "стартани", "закрой", "выключи приложение", "заверши")
+        return containsAny(text, "открой", "запусти", "стартани", "открой ка", "закрой", "выключи приложение", "заверши")
             && containsAny(text, "калькулятор", "проводник", "блокнот", "paint", "chrome", "edge", "cmd", "powershell", "терминал");
     }
 

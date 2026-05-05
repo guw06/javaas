@@ -86,6 +86,7 @@ public class YouTubeCommand implements Command {
     private boolean isPlayIntent(String input) {
         String text = input == null ? "" : input.toLowerCase(Locale.ROOT).replace('ё', 'е');
         return text.contains("включ")
+            || text.contains("вруб")
             || text.contains("постав")
             || text.contains("проигр")
             || text.contains("запусти")
@@ -131,6 +132,8 @@ public class YouTubeCommand implements Command {
             || normalized.equals("мне")
             || normalized.equals("включи")
             || normalized.equals("включить")
+            || normalized.equals("вруби")
+            || normalized.equals("врубить")
             || normalized.equals("поставь")
             || normalized.equals("поставить")
             || normalized.equals("запусти")

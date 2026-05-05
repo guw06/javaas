@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 public class GeminiService {
     private static final String CONFIG_FILE = "aura.properties";
-    private static final String DEFAULT_PROVIDER = "gemini";
+    private static final String DEFAULT_PROVIDER = "auto";
     private static final String DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
     private static final String DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
     private static final String GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";

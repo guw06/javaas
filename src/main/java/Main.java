@@ -25,6 +25,12 @@ public class Main {
         
         SystemMonitorService systemMonitor = new SystemMonitorService();
         systemMonitor.startMonitoring();
+
+        commandManager.register("переведи", List.of(
+            "перевод", "перевести", "как будет", "как сказать", "что значит", "что означает",
+            "translate", "translation", "на японском", "на русском", "на английском", "на казахском",
+            "на казхсский", "казакша", "қазақша"
+        ), new TranslationCommand());
         
         commandManager.register("привет", List.of(
             "здравствуй", "здравствуйте", "добрый день", "добрый вечер",
