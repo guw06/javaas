@@ -50,6 +50,9 @@ function initApp() {
     setupVoiceControls();
     setupAuraSettings();
     setupProjectItems();
+    setupDemoMode();
+    loadActionLog();
+    setInterval(loadActionLog, 8000);
 
     addSystemMessage(`${ASSISTANT_NAME} online. Канал открыт.`);
     setTimeout(() => {
@@ -478,6 +481,144 @@ function resetProjectItemForm() {
     document.getElementById("project-item-form")?.reset();
     const submitButton = document.getElementById("project-item-submit");
     if (submitButton) submitButton.textContent = "Добавить";
+}
+
+function setupDemoMode() {
+    document.getElementById("demo-runner")?.addEventListener("click", runCrudDemo);
+    document.getElementById("action-log-refresh")?.addEventListener("click", loadActionLog);
+}
+
+async function runCrudDemo() {
+    const button = document.getElementById("demo-runner");
+    if (!button || button.disabled) return;
+
+    button.disabled = true;
+    resetDemoSteps();
+
+    try {
+        markDemoStep("create", "active");
+        const created = await requestJson("/api/project-items", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: "Demo: защита проекта",
+                category: "presentation",
+                description: "Автоматический сценарий для показа CRUD."
+            })
+        });
+        const id = created.id;
+        markDemoStep("create", "done");
+        await wait(450);
+
+        markDemoStep("update", "active");
+        await requestJson(`/api/project-items/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: "Demo: проект улучшен",
+                category: "presentation",
+                description: "Пункт был изменен через PUT.",
+                status: "active"
+            })
+        });
+        markDemoStep("update", "done");
+        await wait(450);
+
+        markDemoStep("replace", "active");
+        await requestJson(`/api/project-items/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: "Demo: проект улучшен",
+                category: "presentation",
+                description: "Статус заменен на done.",
+                status: "done"
+            })
+        });
+        markDemoStep("replace", "done");
+        await wait(450);
+
+        markDemoStep("delete", "active");
+        await requestJson(`/api/project-items/${id}`, { method: "DELETE" });
+        markDemoStep("delete", "done");
+
+        await loadProjectItems();
+        await loadActionLog();
+        addSystemMessage("Demo mode: add/edit/done/delete выполнено.");
+    } catch {
+        addSystemMessage("Demo mode: сценарий остановился, backend не ответил.");
+    } finally {
+        button.disabled = false;
+    }
+}
+
+async function requestJson(url, options = {}) {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+}
+
+async function loadActionLog() {
+    const list = document.getElementById("action-log-list");
+    if (!list) return;
+
+    try {
+        const response = await fetch("/api/actions?limit=8", { cache: "no-cache" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const actions = Array.isArray(data.actions) ? data.actions : [];
+        renderActionLog(actions.filter((action) => String(action).includes("project_item_")));
+    } catch {
+        list.textContent = "Журнал недоступен.";
+    }
+}
+
+function renderActionLog(actions) {
+    const list = document.getElementById("action-log-list");
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (actions.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "project-empty";
+        empty.textContent = "Действий пока нет.";
+        list.appendChild(empty);
+        return;
+    }
+
+    actions.forEach((action) => {
+        const item = document.createElement("div");
+        item.className = "action-log-item";
+        item.textContent = formatActionLog(action);
+        list.appendChild(item);
+    });
+}
+
+function formatActionLog(action) {
+    const text = String(action || "");
+    const time = text.slice(11, 19);
+    if (text.includes("project_item_create")) return `${time} · Добавлено`;
+    if (text.includes("project_item_update") && text.includes("done")) return `${time} · Статус: готово`;
+    if (text.includes("project_item_update")) return `${time} · Изменено`;
+    if (text.includes("project_item_delete")) return `${time} · Удалено`;
+    return text;
+}
+
+function resetDemoSteps() {
+    document.querySelectorAll("#demo-steps span").forEach((step) => {
+        step.classList.remove("active", "done");
+    });
+}
+
+function markDemoStep(stepName, state) {
+    const step = document.querySelector(`#demo-steps [data-step="${stepName}"]`);
+    if (!step) return;
+    step.classList.remove("active", "done");
+    step.classList.add(state);
+}
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 document.getElementById("voice-toggle")?.addEventListener("click", function () {

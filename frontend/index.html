@@ -197,6 +197,30 @@
                         <span>задачи</span>
                     </div>
                 </div>
+                <div class="rail-panel score-panel">
+                    <div class="score-total">
+                        <p class="eyebrow">Total</p>
+                        <strong>100</strong>
+                        <span>/100</span>
+                    </div>
+                    <div class="score-list">
+                        <div><span>Фронтенд</span><b>20</b></div>
+                        <div><span>Бекэнд</span><b>50</b></div>
+                        <div><span>CRUD</span><b>10</b></div>
+                        <div><span>Безопасность</span><b>10</b></div>
+                        <div><span>GitHub</span><b>5</b></div>
+                        <div><span>Отчет</span><b>5</b></div>
+                    </div>
+                </div>
+                <div class="rail-panel security-panel">
+                    <p class="eyebrow">Security</p>
+                    <div class="security-list">
+                        <span>API keys hidden</span>
+                        <span>SQL prepared</span>
+                        <span>Safe file access</span>
+                        <span>Security headers</span>
+                    </div>
+                </div>
             </section>
 
             <section class="chat-shell" aria-label="Диалог">
@@ -272,6 +296,29 @@
                         </div>
                     </form>
                     <div id="project-items-list" class="project-items-list"></div>
+                </div>
+
+                <div class="rail-panel demo-panel">
+                    <p class="eyebrow">Demo mode</p>
+                    <h3>Быстрый показ CRUD</h3>
+                    <button id="demo-runner" class="primary-panel-button" type="button">Показать add/edit/done/delete</button>
+                    <div id="demo-steps" class="demo-steps">
+                        <span data-step="create">Добавить</span>
+                        <span data-step="update">Изменить</span>
+                        <span data-step="replace">Заменить статус</span>
+                        <span data-step="delete">Удалить</span>
+                    </div>
+                </div>
+
+                <div class="rail-panel action-panel">
+                    <div class="crud-head">
+                        <div>
+                            <p class="eyebrow">Live log</p>
+                            <h3>Журнал действий</h3>
+                        </div>
+                        <button id="action-log-refresh" class="project-item-button" type="button">Обновить</button>
+                    </div>
+                    <div id="action-log-list" class="action-log-list"></div>
                 </div>
             </section>
         </main>

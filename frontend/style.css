@@ -583,6 +583,84 @@ svg {
     opacity: 0.68;
 }
 
+.score-panel {
+    display: grid;
+    gap: 14px;
+}
+
+.score-total {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: end;
+    gap: 4px;
+}
+
+.score-total strong {
+    color: var(--mint);
+    font: 800 2.8rem/0.9 var(--font-mono);
+}
+
+.score-total span {
+    color: var(--muted);
+    font: 700 1rem var(--font-mono);
+}
+
+.score-list {
+    display: grid;
+    gap: 7px;
+}
+
+.score-list div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    font-size: 0.83rem;
+}
+
+.score-list b {
+    color: var(--amber);
+    font: 700 0.82rem var(--font-mono);
+}
+
+.security-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.security-list {
+    display: grid;
+    gap: 7px;
+}
+
+.security-list span {
+    position: relative;
+    min-height: 28px;
+    padding: 6px 8px 6px 24px;
+    border: 1px solid rgba(143, 227, 193, 0.18);
+    border-radius: 8px;
+    color: var(--muted);
+    background: rgba(143, 227, 193, 0.05);
+    font-size: 0.8rem;
+}
+
+.security-list span::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mint);
+    transform: translateY(-50%);
+}
+
 .chat-shell {
     display: flex;
     flex-direction: column;
@@ -796,14 +874,17 @@ svg {
 }
 
 .right-rail {
-    justify-content: space-between;
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-color: rgba(143, 227, 193, 0.35) transparent;
 }
 
 .voice-orb-wrap {
     position: relative;
     display: grid;
     place-items: center;
-    min-height: 280px;
+    min-height: 220px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background:
@@ -1018,6 +1099,64 @@ svg {
 .project-item-button:hover {
     color: var(--text);
     border-color: rgba(233, 184, 114, 0.34);
+}
+
+.demo-panel,
+.action-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.demo-panel h3,
+.action-panel h3 {
+    margin-top: 4px;
+    font-size: 1rem;
+}
+
+.demo-steps {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.demo-steps span {
+    min-height: 30px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.78rem;
+}
+
+.demo-steps span.active {
+    color: var(--amber);
+    border-color: rgba(233, 184, 114, 0.42);
+    background: rgba(233, 184, 114, 0.08);
+}
+
+.demo-steps span.done {
+    color: var(--mint);
+    border-color: rgba(143, 227, 193, 0.36);
+    background: rgba(143, 227, 193, 0.08);
+}
+
+.action-log-list {
+    display: grid;
+    gap: 7px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 3px;
+}
+
+.action-log-item {
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    font: 500 0.74rem/1.4 var(--font-mono);
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 1080px) {
