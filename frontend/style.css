@@ -529,6 +529,12 @@ svg {
     gap: 14px;
 }
 
+.left-rail {
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-color: rgba(143, 227, 193, 0.35) transparent;
+}
+
 .rail-panel,
 .chat-shell {
     border: 1px solid var(--line);
@@ -539,7 +545,10 @@ svg {
 }
 
 .rail-panel {
+    min-width: 0;
+    flex-shrink: 0;
     padding: 18px;
+    overflow-wrap: anywhere;
 }
 
 .identity-panel {
@@ -566,12 +575,15 @@ svg {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     min-height: 36px;
     padding: 0 10px;
     border: 1px solid var(--line);
     border-radius: 8px;
     color: var(--muted);
     background: rgba(255, 255, 255, 0.03);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
 }
 
 .focus-list span::after {
@@ -612,8 +624,9 @@ svg {
 
 .score-list div {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+    gap: 8px;
     min-height: 28px;
     padding: 0 9px;
     border: 1px solid var(--line);
@@ -621,6 +634,11 @@ svg {
     background: rgba(255, 255, 255, 0.03);
     color: var(--muted);
     font-size: 0.83rem;
+}
+
+.score-list span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .score-list b {
@@ -647,6 +665,8 @@ svg {
     color: var(--muted);
     background: rgba(143, 227, 193, 0.05);
     font-size: 0.8rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .security-list span::before {
@@ -707,12 +727,14 @@ svg {
 }
 
 .chat-container::-webkit-scrollbar,
-.panel-content::-webkit-scrollbar {
+.panel-content::-webkit-scrollbar,
+.left-rail::-webkit-scrollbar {
     width: 8px;
 }
 
 .chat-container::-webkit-scrollbar-thumb,
-.panel-content::-webkit-scrollbar-thumb {
+.panel-content::-webkit-scrollbar-thumb,
+.left-rail::-webkit-scrollbar-thumb {
     background: rgba(143, 227, 193, 0.22);
     border-radius: 999px;
 }
