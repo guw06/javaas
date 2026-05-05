@@ -681,6 +681,68 @@ svg {
     transform: translateY(-50%);
 }
 
+.backend-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.backend-panel h3 {
+    margin-top: 4px;
+    font-size: 1rem;
+}
+
+.backend-health-list {
+    display: grid;
+    gap: 7px;
+}
+
+.backend-health-list div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.8rem;
+}
+
+.backend-health-list b {
+    color: var(--mint);
+    font: 700 0.76rem var(--font-mono);
+    text-align: right;
+}
+
+.backend-link-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 7px;
+}
+
+.backend-link-grid a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 6px;
+    border: 1px solid rgba(143, 227, 193, 0.22);
+    border-radius: 8px;
+    color: var(--mint);
+    background: rgba(143, 227, 193, 0.05);
+    font: 700 0.7rem var(--font-mono);
+    text-align: center;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.backend-link-grid a:hover {
+    border-color: rgba(143, 227, 193, 0.38);
+    background: rgba(143, 227, 193, 0.10);
+}
+
 .chat-shell {
     display: flex;
     flex-direction: column;
@@ -1055,6 +1117,29 @@ svg {
     gap: 8px;
 }
 
+.crud-filter-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    gap: 8px;
+}
+
+.crud-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+}
+
+.crud-stats span {
+    min-height: 28px;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.03);
+    font: 700 0.72rem var(--font-mono);
+    overflow-wrap: anywhere;
+}
+
 .project-items-list {
     display: grid;
     gap: 8px;
@@ -1081,6 +1166,11 @@ svg {
 .project-item.done {
     border-color: rgba(143, 227, 193, 0.28);
     background: rgba(143, 227, 193, 0.07);
+}
+
+.project-item.archived {
+    border-color: rgba(177, 145, 255, 0.24);
+    background: rgba(177, 145, 255, 0.06);
 }
 
 .project-item strong {

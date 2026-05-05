@@ -221,6 +221,21 @@
                         <span>Security headers</span>
                     </div>
                 </div>
+                <div class="rail-panel backend-panel">
+                    <div class="crud-head">
+                        <div>
+                            <p class="eyebrow">Backend</p>
+                            <h3>API статус</h3>
+                        </div>
+                        <button id="backend-refresh" class="project-item-button" type="button">OK</button>
+                    </div>
+                    <div id="backend-health-list" class="backend-health-list"></div>
+                    <div class="backend-link-grid">
+                        <a href="/api/health" target="_blank" rel="noopener noreferrer">Health</a>
+                        <a href="/api/docs" target="_blank" rel="noopener noreferrer">API docs</a>
+                        <a href="/api/report?download=true" target="_blank" rel="noopener noreferrer">Отчет</a>
+                    </div>
+                </div>
             </section>
 
             <section class="chat-shell" aria-label="Диалог">
@@ -295,6 +310,16 @@
                             <button id="project-item-cancel" class="secondary-panel-button" type="button">Отмена</button>
                         </div>
                     </form>
+                    <div class="crud-filter-row">
+                        <input id="project-item-search" class="control-input" type="search" maxlength="80" placeholder="Поиск">
+                        <select id="project-item-status-filter" class="control-select">
+                            <option value="all">Все</option>
+                            <option value="active">Active</option>
+                            <option value="done">Done</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                    <div id="project-item-stats" class="crud-stats"></div>
                     <div id="project-items-list" class="project-items-list"></div>
                 </div>
 

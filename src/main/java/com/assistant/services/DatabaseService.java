@@ -476,16 +476,46 @@ public class DatabaseService {
     }
 
     public synchronized List<Map<String, Object>> getProjectItems(int limit) {
+        return getProjectItems(limit, "", "");
+    }
+
+    public synchronized List<Map<String, Object>> getProjectItems(int limit, String status, String search) {
         List<Map<String, Object>> items = new ArrayList<>();
-        String sql = """
+        int safeLimit = Math.max(1, Math.min(limit, 200));
+        String normalizedStatus = normalizeProjectStatusFilter(status);
+        String normalizedSearch = search == null ? "" : search.trim().toLowerCase();
+        List<String> params = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
             SELECT id, title, description, category, status, created_at, updated_at
             FROM project_items
+            WHERE 1 = 1
+            """);
+
+        if (!normalizedStatus.isBlank()) {
+            sql.append(" AND status = ?");
+            params.add(normalizedStatus);
+        }
+
+        if (!normalizedSearch.isBlank()) {
+            sql.append(" AND (lower(title) LIKE ? OR lower(description) LIKE ? OR lower(category) LIKE ?)");
+            String like = "%" + normalizedSearch + "%";
+            params.add(like);
+            params.add(like);
+            params.add(like);
+        }
+
+        sql.append("""
             ORDER BY id DESC
             LIMIT ?
-            """;
+            """);
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, limit);
+        try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (String param : params) {
+                statement.setString(index++, param);
+            }
+            statement.setInt(index, safeLimit);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     Map<String, Object> item = new LinkedHashMap<>();
@@ -504,6 +534,36 @@ public class DatabaseService {
         }
 
         return items;
+    }
+
+    public synchronized Map<String, Object> getProjectItemStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        stats.put("total", 0);
+        stats.put("active", 0);
+        stats.put("done", 0);
+        stats.put("archived", 0);
+
+        String sql = """
+            SELECT status, COUNT(*) AS total
+            FROM project_items
+            GROUP BY status
+            """;
+
+        int total = 0;
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            while (resultSet.next()) {
+                String status = normalizeProjectStatus(resultSet.getString("status"));
+                int count = resultSet.getInt("total");
+                stats.put(status, count);
+                total += count;
+            }
+            stats.put("total", total);
+        } catch (SQLException e) {
+            System.err.println("Project item stats error: " + e.getMessage());
+        }
+
+        return stats;
     }
 
     public synchronized boolean updateProjectItem(int id, String title, String description, String category, String status) {
@@ -659,11 +719,30 @@ public class DatabaseService {
         }
     }
 
+    public synchronized int countHistoryRows() {
+        return countRows("history", "History count error");
+    }
+
+    public synchronized int countActionRows() {
+        return countRows("action_log", "Action count error");
+    }
+
     private void executeDelete(String sql, String errorPrefix) {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
         } catch (SQLException e) {
             System.err.println(errorPrefix + ": " + e.getMessage());
+        }
+    }
+
+    private int countRows(String table, String errorPrefix) {
+        String sql = "SELECT COUNT(*) AS total FROM " + table;
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            return resultSet.next() ? resultSet.getInt("total") : 0;
+        } catch (SQLException e) {
+            System.err.println(errorPrefix + ": " + e.getMessage());
+            return 0;
         }
     }
 
@@ -794,6 +873,18 @@ public class DatabaseService {
         return switch (normalized) {
             case "active", "done", "archived" -> normalized;
             default -> "active";
+        };
+    }
+
+    private String normalizeProjectStatusFilter(String status) {
+        if (status == null || status.isBlank() || "all".equalsIgnoreCase(status)) {
+            return "";
+        }
+
+        String normalized = status.trim().toLowerCase();
+        return switch (normalized) {
+            case "active", "done", "archived" -> normalized;
+            default -> "";
         };
     }
 }

@@ -9,6 +9,7 @@ const STARTUP_GREETING = "Привет. Я AURA. Я рядом, можешь г�
 let voiceEnabled = true;
 let isOnline = false;
 let editingProjectItemId = null;
+let editingProjectItemStatus = "active";
 
 (function bootSequence() {
     const bar = document.getElementById("boot-progress-bar");
@@ -51,6 +52,7 @@ function initApp() {
     setupAuraSettings();
     setupProjectItems();
     setupDemoMode();
+    setupBackendDashboard();
     loadActionLog();
     setInterval(loadActionLog, 8000);
 
@@ -330,6 +332,8 @@ async function setupProjectItems() {
     const descriptionEl = document.getElementById("project-item-description");
     const submitButton = document.getElementById("project-item-submit");
     const cancelButton = document.getElementById("project-item-cancel");
+    const searchEl = document.getElementById("project-item-search");
+    const statusFilterEl = document.getElementById("project-item-status-filter");
 
     if (!form || !titleEl || !categoryEl || !descriptionEl || !submitButton || !cancelButton) return;
 
@@ -342,7 +346,7 @@ async function setupProjectItems() {
             title: titleEl.value.trim(),
             category: categoryEl.value.trim() || "general",
             description: descriptionEl.value.trim(),
-            status: "active"
+            status: editingProjectItemId ? editingProjectItemStatus : "active"
         };
 
         if (!payload.title) {
@@ -370,6 +374,9 @@ async function setupProjectItems() {
     });
 
     cancelButton.addEventListener("click", resetProjectItemForm);
+
+    searchEl?.addEventListener("input", debounce(loadProjectItems, 220));
+    statusFilterEl?.addEventListener("change", loadProjectItems);
 }
 
 async function loadProjectItems() {
@@ -377,13 +384,42 @@ async function loadProjectItems() {
     if (!list) return;
 
     try {
-        const response = await fetch("/api/project-items", { cache: "no-cache" });
+        const params = new URLSearchParams();
+        const search = document.getElementById("project-item-search")?.value.trim();
+        const status = document.getElementById("project-item-status-filter")?.value || "all";
+        if (search) params.set("q", search);
+        if (status && status !== "all") params.set("status", status);
+        params.set("limit", "100");
+
+        const response = await fetch(`/api/project-items?${params}`, { cache: "no-cache" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         renderProjectItems(Array.isArray(data.items) ? data.items : []);
+        renderProjectStats(data.stats || {});
     } catch {
         list.textContent = "CRUD API недоступен.";
     }
+}
+
+function renderProjectStats(stats) {
+    const el = document.getElementById("project-item-stats");
+    if (!el) return;
+
+    const total = Number(stats.total || 0);
+    const active = Number(stats.active || 0);
+    const done = Number(stats.done || 0);
+    const archived = Number(stats.archived || 0);
+    el.innerHTML = "";
+    [
+        ["Всего", total],
+        ["Active", active],
+        ["Done", done],
+        ["Archive", archived]
+    ].forEach(([label, value]) => {
+        const item = document.createElement("span");
+        item.textContent = `${label}: ${value}`;
+        el.appendChild(item);
+    });
 }
 
 function renderProjectItems(items) {
@@ -401,7 +437,7 @@ function renderProjectItems(items) {
 
     items.forEach((item) => {
         const row = document.createElement("article");
-        row.className = `project-item ${item.status === "done" ? "done" : ""}`;
+        row.className = `project-item ${item.status === "done" ? "done" : ""} ${item.status === "archived" ? "archived" : ""}`;
 
         const title = document.createElement("strong");
         title.textContent = item.title || "Untitled";
@@ -417,7 +453,9 @@ function renderProjectItems(items) {
         actions.className = "project-item-actions";
         actions.append(
             projectItemButton("Изм.", () => startProjectItemEdit(item)),
+            projectItemButton("Active", () => updateProjectItemStatus(item, "active")),
             projectItemButton("Готово", () => updateProjectItemStatus(item, "done")),
+            projectItemButton("Архив", () => updateProjectItemStatus(item, "archived")),
             projectItemButton("Удалить", () => deleteProjectItem(item.id))
         );
 
@@ -437,6 +475,7 @@ function projectItemButton(label, onClick) {
 
 function startProjectItemEdit(item) {
     editingProjectItemId = item.id;
+    editingProjectItemStatus = item.status || "active";
     document.getElementById("project-item-title").value = item.title || "";
     document.getElementById("project-item-category").value = item.category || "";
     document.getElementById("project-item-description").value = item.description || "";
@@ -478,6 +517,7 @@ async function deleteProjectItem(id) {
 
 function resetProjectItemForm() {
     editingProjectItemId = null;
+    editingProjectItemStatus = "active";
     document.getElementById("project-item-form")?.reset();
     const submitButton = document.getElementById("project-item-submit");
     if (submitButton) submitButton.textContent = "Добавить";
@@ -486,6 +526,60 @@ function resetProjectItemForm() {
 function setupDemoMode() {
     document.getElementById("demo-runner")?.addEventListener("click", runCrudDemo);
     document.getElementById("action-log-refresh")?.addEventListener("click", loadActionLog);
+}
+
+function setupBackendDashboard() {
+    document.getElementById("backend-refresh")?.addEventListener("click", loadBackendDashboard);
+    loadBackendDashboard();
+    setInterval(loadBackendDashboard, 12000);
+}
+
+async function loadBackendDashboard() {
+    const list = document.getElementById("backend-health-list");
+    if (!list) return;
+
+    try {
+        const [healthResponse, docsResponse] = await Promise.all([
+            fetch("/api/health", { cache: "no-cache" }),
+            fetch("/api/docs", { cache: "no-cache" })
+        ]);
+        if (!healthResponse.ok || !docsResponse.ok) throw new Error("Backend dashboard failed");
+
+        const health = await healthResponse.json();
+        const docs = await docsResponse.json();
+        renderBackendDashboard(health, docs);
+    } catch {
+        list.textContent = "Backend API недоступен.";
+    }
+}
+
+function renderBackendDashboard(health, docs) {
+    const list = document.getElementById("backend-health-list");
+    if (!list) return;
+
+    const endpoints = Array.isArray(docs.endpoints) ? docs.endpoints.length : 0;
+    const memory = health.memory || {};
+    const database = health.database || {};
+    const backend = health.backend || {};
+
+    list.innerHTML = "";
+    [
+        ["Status", health.status || "unknown"],
+        ["Port", health.port || "-"],
+        ["DB", database.connected ? "connected" : "offline"],
+        ["Commands", backend.commands || 0],
+        ["Endpoints", endpoints],
+        ["Memory", `${memory.percentage || 0}%`],
+        ["Rate limit", health.security?.rateLimit || "on"]
+    ].forEach(([label, value]) => {
+        const row = document.createElement("div");
+        const name = document.createElement("span");
+        const data = document.createElement("b");
+        name.textContent = label;
+        data.textContent = value;
+        row.append(name, data);
+        list.appendChild(row);
+    });
 }
 
 async function runCrudDemo() {
@@ -619,6 +713,14 @@ function markDemoStep(stepName, state) {
 
 function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function debounce(fn, delay) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+    };
 }
 
 document.getElementById("voice-toggle")?.addEventListener("click", function () {

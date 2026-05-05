@@ -10,10 +10,10 @@ AURA - персональный Java-ассистент с веб-интерфе
 
 | Критерий | Балл | Что реализовано |
 | --- | ---: | --- |
-| Фронтенд | 20 | Полноэкранный веб-интерфейс, чат, голосовые настройки, быстрые команды, статус backend, runtime-блок, CRUD-панель, demo mode, live log, панель 100/100, GitHub-ссылка. |
-| Бекэнд | 50 | Java 21 + Javalin REST API, SQLite, маршрутизация команд, системные сервисы, AI provider auto mode, настройки, история, задачи, напоминания, action log, project items API. |
-| Добавит/изменит/заменит/удалит | 10 | REST CRUD для `/api/project-items`: POST add, PUT update/replace status, DELETE remove, GET list. |
-| Безопасность | 10 | `aura.properties` игнорируется Git, ключи не выводятся в UI, prepared statements для SQL, request body limits, status validation, safe file walker, security headers. |
+| Фронтенд | 20 | Полноэкранный веб-интерфейс, чат, голосовые настройки, быстрые команды, status/backend dashboard, runtime-блок, CRUD-панель с поиском/фильтрами, demo mode, live log, панель 100/100, GitHub-ссылка. |
+| Бекэнд | 50 | Java 21 + Javalin REST API, SQLite, маршрутизация команд, системные сервисы, AI provider auto mode, настройки, история, задачи, напоминания, action log, project items API, `/api/health`, `/api/docs`, `/api/report`. |
+| Добавит/изменит/заменит/удалит | 10 | REST CRUD для `/api/project-items`: POST add, PUT update/replace status, DELETE remove, GET list/search/filter/stats. |
+| Безопасность | 10 | `aura.properties` игнорируется Git, ключи не выводятся в UI/API, prepared statements для SQL, request body limits, status validation, simple rate limit, safe file walker, security headers. |
 | GitHub link | 5 | Ссылка указана в UI и отчете: https://github.com/guw06/javaas |
 | Отчет | 5 | Этот файл фиксирует функционал, критерии и итоговую оценку. |
 | Total | 100 | Проект закрывает все пункты рубрики. |
@@ -25,6 +25,7 @@ AURA - персональный Java-ассистент с веб-интерфе
 3. Frontend: открыть URL из консоли запуска.
 4. CRUD: в правой панели добавить пункт, изменить, отметить `Готово`, удалить.
 5. Demo Mode: нажать `Показать add/edit/done/delete`, чтобы автоматически показать полный CRUD-сценарий.
+6. Backend dashboard: открыть `/api/health`, `/api/docs`, `/api/report?download=true` или нажать ссылки в левой панели.
 
 ## Безопасность
 
@@ -33,3 +34,4 @@ AURA - персональный Java-ассистент с веб-интерфе
 - SQL-запросы с пользовательским вводом используют `PreparedStatement`.
 - Файловый поиск пропускает закрытые Windows-папки и не роняет backend.
 - REST endpoints ограничивают размер тела запроса и валидируют статус проектного пункта.
+- `/api/*` защищены простым rate limit от слишком частых запросов.
