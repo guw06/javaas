@@ -1,4 +1,5 @@
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.staticfiles.Location;
 import com.google.gson.Gson;
 import com.assistant.models.RequestDto;
@@ -15,8 +16,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Main {
     private static final CommandManager commandManager = new CommandManager();
@@ -294,11 +297,25 @@ public class Main {
         openBrowser(serverUrl);
         trayService.install(serverUrl);
 
+        app.before(ctx -> {
+            ctx.header("X-Content-Type-Options", "nosniff");
+            ctx.header("X-Frame-Options", "DENY");
+            ctx.header("Referrer-Policy", "same-origin");
+            ctx.header("Permissions-Policy", "camera=(), geolocation=(), payment=()");
+        });
+
         app.get("/ping", ctx -> ctx.result("pong"));
         
         app.post("/api/command", ctx -> {
+            if (rejectLargeBody(ctx, 16_384)) {
+                return;
+            }
             RequestDto request = gson.fromJson(ctx.body(), RequestDto.class);
-            String userText = request.getText();
+            String userText = cleanText(request == null ? "" : request.getText(), 1_000);
+            if (userText.isBlank()) {
+                ctx.status(400).json(Map.of("error", "Command text is required."));
+                return;
+            }
             String result = commandManager.process(userText);
             database.logInteraction(userText, result);
             ResponseDto response = new ResponseDto(result);
@@ -330,6 +347,77 @@ public class Main {
         app.get("/api/actions", ctx -> {
             int limit = ctx.queryParamAsClass("limit", Integer.class).getOrDefault(50);
             ctx.json(Map.of("actions", database.getActionLog(limit)));
+        });
+
+        app.get("/api/project-items", ctx -> ctx.json(Map.of("items", database.getProjectItems(100))));
+
+        app.post("/api/project-items", ctx -> {
+            if (rejectLargeBody(ctx, 8_192)) {
+                return;
+            }
+
+            Map<?, ?> payload = gson.fromJson(ctx.body(), Map.class);
+            String title = cleanText(valueOf(payload, "title"), 80);
+            String description = cleanText(valueOf(payload, "description"), 240);
+            String category = cleanText(valueOf(payload, "category"), 40);
+
+            if (title.isBlank()) {
+                ctx.status(400).json(Map.of("error", "Title is required."));
+                return;
+            }
+
+            int id = database.addProjectItem(title, description, category);
+            if (id <= 0) {
+                ctx.status(500).json(Map.of("error", "Could not create project item."));
+                return;
+            }
+
+            database.logAction("project_item_create", "#" + id + " " + title);
+            ctx.status(201).json(Map.of("id", id, "items", database.getProjectItems(100)));
+        });
+
+        app.put("/api/project-items/{id}", ctx -> {
+            if (rejectLargeBody(ctx, 8_192)) {
+                return;
+            }
+
+            int id = parsePositiveId(ctx.pathParam("id"));
+            Map<?, ?> payload = gson.fromJson(ctx.body(), Map.class);
+            String title = cleanText(valueOf(payload, "title"), 80);
+            String description = cleanText(valueOf(payload, "description"), 240);
+            String category = cleanText(valueOf(payload, "category"), 40);
+            String status = cleanStatus(valueOf(payload, "status"));
+
+            if (id <= 0 || title.isBlank()) {
+                ctx.status(400).json(Map.of("error", "Valid id and title are required."));
+                return;
+            }
+
+            boolean updated = database.updateProjectItem(id, title, description, category, status);
+            if (!updated) {
+                ctx.status(404).json(Map.of("error", "Project item not found."));
+                return;
+            }
+
+            database.logAction("project_item_update", "#" + id + " " + title + " -> " + status);
+            ctx.json(Map.of("items", database.getProjectItems(100)));
+        });
+
+        app.delete("/api/project-items/{id}", ctx -> {
+            int id = parsePositiveId(ctx.pathParam("id"));
+            if (id <= 0) {
+                ctx.status(400).json(Map.of("error", "Valid id is required."));
+                return;
+            }
+
+            boolean deleted = database.deleteProjectItem(id);
+            if (!deleted) {
+                ctx.status(404).json(Map.of("error", "Project item not found."));
+                return;
+            }
+
+            database.logAction("project_item_delete", "#" + id);
+            ctx.json(Map.of("items", database.getProjectItems(100)));
         });
 
         app.get("/api/reminders/due", ctx -> ctx.json(Map.of("reminders", reminderService.pollDueReminders())));
@@ -425,6 +513,54 @@ public class Main {
             return port >= 1 && port <= 65535 ? port : fallback;
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    private static boolean rejectLargeBody(Context ctx, int maxBytes) {
+        int size = ctx.body().getBytes(StandardCharsets.UTF_8).length;
+        if (size <= maxBytes) {
+            return false;
+        }
+
+        ctx.status(413).json(Map.of("error", "Request body is too large."));
+        return true;
+    }
+
+    private static String valueOf(Map<?, ?> payload, String key) {
+        if (payload == null || key == null) {
+            return "";
+        }
+
+        Object value = payload.get(key);
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private static String cleanText(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+
+        String cleaned = value
+            .replaceAll("[\\p{Cntrl}&&[^\r\n\t]]", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
+        if (cleaned.length() <= maxLength) {
+            return cleaned;
+        }
+        return cleaned.substring(0, maxLength).trim();
+    }
+
+    private static String cleanStatus(String value) {
+        String status = cleanText(value, 20).toLowerCase();
+        return Set.of("active", "done", "archived").contains(status) ? status : "active";
+    }
+
+    private static int parsePositiveId(String value) {
+        try {
+            int id = Integer.parseInt(value);
+            return id > 0 ? id : -1;
+        } catch (NumberFormatException e) {
+            return -1;
         }
     }
     

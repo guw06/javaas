@@ -8,6 +8,7 @@ const STARTUP_GREETING = "Привет. Я AURA. Я рядом, можешь г�
 
 let voiceEnabled = true;
 let isOnline = false;
+let editingProjectItemId = null;
 
 (function bootSequence() {
     const bar = document.getElementById("boot-progress-bar");
@@ -48,6 +49,7 @@ function initApp() {
     setInterval(pollReminders, 15000);
     setupVoiceControls();
     setupAuraSettings();
+    setupProjectItems();
 
     addSystemMessage(`${ASSISTANT_NAME} online. Канал открыт.`);
     setTimeout(() => {
@@ -316,6 +318,166 @@ async function setupAuraSettings() {
             addSystemMessage("Backend недоступен, настройки не сохранены.");
         }
     });
+}
+
+async function setupProjectItems() {
+    const form = document.getElementById("project-item-form");
+    const titleEl = document.getElementById("project-item-title");
+    const categoryEl = document.getElementById("project-item-category");
+    const descriptionEl = document.getElementById("project-item-description");
+    const submitButton = document.getElementById("project-item-submit");
+    const cancelButton = document.getElementById("project-item-cancel");
+
+    if (!form || !titleEl || !categoryEl || !descriptionEl || !submitButton || !cancelButton) return;
+
+    await loadProjectItems();
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const payload = {
+            title: titleEl.value.trim(),
+            category: categoryEl.value.trim() || "general",
+            description: descriptionEl.value.trim(),
+            status: "active"
+        };
+
+        if (!payload.title) {
+            addSystemMessage("CRUD: укажите название пункта.");
+            return;
+        }
+
+        const url = editingProjectItemId ? `/api/project-items/${editingProjectItemId}` : "/api/project-items";
+        const method = editingProjectItemId ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            resetProjectItemForm();
+            await loadProjectItems();
+            addSystemMessage(method === "POST" ? "CRUD: пункт добавлен." : "CRUD: пункт изменен.");
+        } catch {
+            addSystemMessage("CRUD: не удалось сохранить пункт.");
+        }
+    });
+
+    cancelButton.addEventListener("click", resetProjectItemForm);
+}
+
+async function loadProjectItems() {
+    const list = document.getElementById("project-items-list");
+    if (!list) return;
+
+    try {
+        const response = await fetch("/api/project-items", { cache: "no-cache" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        renderProjectItems(Array.isArray(data.items) ? data.items : []);
+    } catch {
+        list.textContent = "CRUD API недоступен.";
+    }
+}
+
+function renderProjectItems(items) {
+    const list = document.getElementById("project-items-list");
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "project-empty";
+        empty.textContent = "Пока нет пунктов. Добавьте первый.";
+        list.appendChild(empty);
+        return;
+    }
+
+    items.forEach((item) => {
+        const row = document.createElement("article");
+        row.className = `project-item ${item.status === "done" ? "done" : ""}`;
+
+        const title = document.createElement("strong");
+        title.textContent = item.title || "Untitled";
+
+        const meta = document.createElement("span");
+        meta.className = "project-meta";
+        meta.textContent = `${item.category || "general"} · ${item.status || "active"}`;
+
+        const description = document.createElement("p");
+        description.textContent = item.description || "Без описания";
+
+        const actions = document.createElement("div");
+        actions.className = "project-item-actions";
+        actions.append(
+            projectItemButton("Изм.", () => startProjectItemEdit(item)),
+            projectItemButton("Готово", () => updateProjectItemStatus(item, "done")),
+            projectItemButton("Удалить", () => deleteProjectItem(item.id))
+        );
+
+        row.append(title, meta, description, actions);
+        list.appendChild(row);
+    });
+}
+
+function projectItemButton(label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "project-item-button";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+}
+
+function startProjectItemEdit(item) {
+    editingProjectItemId = item.id;
+    document.getElementById("project-item-title").value = item.title || "";
+    document.getElementById("project-item-category").value = item.category || "";
+    document.getElementById("project-item-description").value = item.description || "";
+    document.getElementById("project-item-submit").textContent = "Изменить";
+}
+
+async function updateProjectItemStatus(item, status) {
+    try {
+        const response = await fetch(`/api/project-items/${item.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: item.title,
+                category: item.category,
+                description: item.description,
+                status
+            })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        await loadProjectItems();
+        addSystemMessage("CRUD: статус заменен.");
+    } catch {
+        addSystemMessage("CRUD: не удалось заменить статус.");
+    }
+}
+
+async function deleteProjectItem(id) {
+    try {
+        const response = await fetch(`/api/project-items/${id}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        await loadProjectItems();
+        addSystemMessage("CRUD: пункт удален.");
+    } catch {
+        addSystemMessage("CRUD: не удалось удалить пункт.");
+    }
+}
+
+function resetProjectItemForm() {
+    editingProjectItemId = null;
+    document.getElementById("project-item-form")?.reset();
+    const submitButton = document.getElementById("project-item-submit");
+    if (submitButton) submitButton.textContent = "Добавить";
 }
 
 document.getElementById("voice-toggle")?.addEventListener("click", function () {

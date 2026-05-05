@@ -118,6 +118,18 @@ public class DatabaseService {
             )
             """;
 
+        String createProjectItemsTable = """
+            CREATE TABLE IF NOT EXISTS project_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                category TEXT DEFAULT 'general',
+                status TEXT DEFAULT 'active',
+                created_at DATETIME DEFAULT (datetime('now','localtime')),
+                updated_at DATETIME DEFAULT (datetime('now','localtime'))
+            )
+            """;
+
         try (Statement statement = connection.createStatement()) {
             statement.execute(createMemoryTable);
             statement.execute(createHistoryTable);
@@ -129,6 +141,7 @@ public class DatabaseService {
             statement.execute(createHabitsTable);
             statement.execute(createCustomCommandsTable);
             statement.execute(createActionLogTable);
+            statement.execute(createProjectItemsTable);
         } catch (SQLException e) {
             System.err.println("Database table error: " + e.getMessage());
         }
@@ -438,6 +451,100 @@ public class DatabaseService {
             """, limit);
     }
 
+    public synchronized int addProjectItem(String title, String description, String category) {
+        if (title == null || title.isBlank()) {
+            return -1;
+        }
+
+        String sql = """
+            INSERT INTO project_items (title, description, category, status)
+            VALUES (?, ?, ?, 'active')
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, title.trim());
+            statement.setString(2, description == null ? "" : description.trim());
+            statement.setString(3, category == null || category.isBlank() ? "general" : category.trim());
+            statement.executeUpdate();
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                return keys.next() ? keys.getInt(1) : -1;
+            }
+        } catch (SQLException e) {
+            System.err.println("Project item save error: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    public synchronized List<Map<String, Object>> getProjectItems(int limit) {
+        List<Map<String, Object>> items = new ArrayList<>();
+        String sql = """
+            SELECT id, title, description, category, status, created_at, updated_at
+            FROM project_items
+            ORDER BY id DESC
+            LIMIT ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, limit);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", resultSet.getInt("id"));
+                    item.put("title", resultSet.getString("title"));
+                    item.put("description", resultSet.getString("description"));
+                    item.put("category", resultSet.getString("category"));
+                    item.put("status", resultSet.getString("status"));
+                    item.put("created_at", resultSet.getString("created_at"));
+                    item.put("updated_at", resultSet.getString("updated_at"));
+                    items.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Project item read error: " + e.getMessage());
+        }
+
+        return items;
+    }
+
+    public synchronized boolean updateProjectItem(int id, String title, String description, String category, String status) {
+        if (id <= 0 || title == null || title.isBlank()) {
+            return false;
+        }
+
+        String sql = """
+            UPDATE project_items
+            SET title = ?, description = ?, category = ?, status = ?, updated_at = datetime('now','localtime')
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, title.trim());
+            statement.setString(2, description == null ? "" : description.trim());
+            statement.setString(3, category == null || category.isBlank() ? "general" : category.trim());
+            statement.setString(4, normalizeProjectStatus(status));
+            statement.setInt(5, id);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Project item update error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public synchronized boolean deleteProjectItem(int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        String sql = "DELETE FROM project_items WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Project item delete error: " + e.getMessage());
+            return false;
+        }
+    }
+
     public synchronized List<String> getTodayActionLog(int limit) {
         return readActionLog("""
             SELECT action, detail, created_at
@@ -676,5 +783,17 @@ public class DatabaseService {
         } catch (Exception e) {
             return value;
         }
+    }
+
+    private String normalizeProjectStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return "active";
+        }
+
+        String normalized = status.trim().toLowerCase();
+        return switch (normalized) {
+            case "active", "done", "archived" -> normalized;
+            default -> "active";
+        };
     }
 }

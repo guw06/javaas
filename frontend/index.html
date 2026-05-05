@@ -253,6 +253,26 @@
                     <div class="meter-row"><span>Voice</span><b id="runtime-voice">ready</b></div>
                     <div class="meter-row"><span>AI</span><b>auto</b></div>
                 </div>
+
+                <div class="rail-panel crud-panel">
+                    <div class="crud-head">
+                        <div>
+                            <p class="eyebrow">CRUD</p>
+                            <h3>Проектные пункты</h3>
+                        </div>
+                        <a class="github-link" href="https://github.com/guw06/javaas" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    </div>
+                    <form id="project-item-form" class="crud-form">
+                        <input id="project-item-title" class="control-input" type="text" maxlength="80" placeholder="Название">
+                        <input id="project-item-category" class="control-input" type="text" maxlength="40" placeholder="Категория">
+                        <textarea id="project-item-description" class="control-textarea" maxlength="240" placeholder="Описание"></textarea>
+                        <div class="crud-actions">
+                            <button id="project-item-submit" class="primary-panel-button" type="submit">Добавить</button>
+                            <button id="project-item-cancel" class="secondary-panel-button" type="button">Отмена</button>
+                        </div>
+                    </form>
+                    <div id="project-items-list" class="project-items-list"></div>
+                </div>
             </section>
         </main>
     </div>
