@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 public class DatabaseService {
-    private static final String DB_URL = "jdbc:sqlite:jarvis.db";
+    private static final String DB_FILE = "aura.db";
+    private static final String DB_URL = "jdbc:sqlite:" + DB_FILE;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private Connection connection;
@@ -24,7 +25,7 @@ public class DatabaseService {
         try {
             connection = DriverManager.getConnection(DB_URL);
             createTables();
-            System.out.println("Database ready: jarvis.db");
+            System.out.println("Database ready: " + DB_FILE);
         } catch (SQLException e) {
             System.err.println("Database connection error: " + e.getMessage());
         }

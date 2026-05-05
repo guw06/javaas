@@ -9,8 +9,8 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>J.A.R.V.I.S. - Personal AI Assistant</name>
-    <description>Персональный голосовой ассистент с Gemini AI</description>
+    <name>AURA - Personal AI Assistant</name>
+    <description>Персональный голосовой ассистент AURA с AI</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

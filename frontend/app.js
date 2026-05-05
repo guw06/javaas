@@ -1,7 +1,7 @@
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let continuousMode = false;
-const wakeWords = ["аура", "джарвис", "ассистент", "алиса"];
+const wakeWords = ["аура", "aura", "ассистент"];
 
 let voiceSettings = {
     voice: null,

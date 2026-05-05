@@ -108,7 +108,7 @@ public class HelpCommand implements Command {
         sb.append("Локальные знания:\n");
         sb.append("  - что такое frontend\n");
         sb.append("  - что такое backend\n");
-        sb.append("  - объясни JARVIS\n\n");
+        sb.append("  - объясни AURA\n\n");
 
         sb.append("Если это обычный вопрос, AURA ответит через подключенную модель.");
         return sb.toString();

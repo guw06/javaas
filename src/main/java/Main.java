@@ -278,7 +278,7 @@ public class Main {
         
         System.out.println("\n" +
             "╔═══════════════════════════════════════════════════════════╗\n" +
-            "║  🤖 J.A.R.V.I.S. — Персональный ИИ-Ассистент           ║\n" +
+            "║  AURA — Персональный ИИ-Ассистент                       ║\n" +
             "║  🚀 Сервер запущен на порту 8080                        ║\n" +
             "║  ⚡ Java 21 | Gemini/OpenAI | Local Brain               ║\n" +
             "║  📝 Команд: " + commandManager.getCommandCount() + " | Алиасов: 150+                       ║\n" +

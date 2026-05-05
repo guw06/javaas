@@ -2,9 +2,10 @@ aura.properties
 .env
 *.local.properties
 *.db
+*.log
 target/
 *.class
-jarvis.db
+aura.db
 screenshot.png
 .sixth/
 .vscode/
