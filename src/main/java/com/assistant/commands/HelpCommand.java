@@ -47,6 +47,8 @@ public class HelpCommand implements Command {
         sb.append("Файлы:\n");
         sb.append("  - создай файл notes.txt\n");
         sb.append("  - создай файл notes.txt с текстом привет\n");
+        sb.append("  - открой файл notes.txt\n");
+        sb.append("  - открой папку Документы\n");
         sb.append("  - создай папку project\n");
         sb.append("  - перемести \"notes.txt\" в \"archive\"\n");
         sb.append("  - удали файл notes.txt\n");
@@ -54,7 +56,8 @@ public class HelpCommand implements Command {
 
         sb.append("Word-документы:\n");
         sb.append("  - создай Word документ \"report.docx\" с текстом Привет\n");
-        sb.append("  - создай документ Word на тему искусственный интеллект\n\n");
+        sb.append("  - создай документ Word на тему искусственный интеллект\n");
+        sb.append("  - открой Word документ report\n\n");
 
         sb.append("Agent mode:\n");
         sb.append("  - агент найди все PDF в загрузках\n");

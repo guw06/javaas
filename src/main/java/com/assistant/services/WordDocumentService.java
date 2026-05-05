@@ -1,15 +1,19 @@
 package com.assistant.services;
 
+import java.awt.Desktop;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -19,15 +23,20 @@ public class WordDocumentService {
     private static final DateTimeFormatter NAME_TIME = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
 
     private final GeminiService geminiService = new GeminiService();
+    private final Path userHome;
     private final Path defaultDirectory;
 
     public WordDocumentService() {
-        Path home = Path.of(System.getProperty("user.home")).toAbsolutePath().normalize();
-        Path desktop = home.resolve("Desktop");
-        this.defaultDirectory = Files.isDirectory(desktop) ? desktop : home;
+        this.userHome = Path.of(System.getProperty("user.home")).toAbsolutePath().normalize();
+        Path desktop = userHome.resolve("Desktop");
+        this.defaultDirectory = Files.isDirectory(desktop) ? desktop : userHome;
     }
 
     public String createFromCommand(String input) {
+        if (isOpenIntent(input) && !isCreateIntent(input)) {
+            return openFromCommand(input);
+        }
+
         DocumentRequest request = parse(input);
 
         if (request.content().isBlank()) {
@@ -49,10 +58,150 @@ public class WordDocumentService {
         try {
             Path output = uniquePath(defaultDirectory.resolve(request.fileName()).toAbsolutePath().normalize());
             createDocx(output, request.content());
-            return "Готово, создала Word-документ " + describePath(output) + ".";
+            boolean opened = openPath(output);
+            return opened
+                ? "Готово, создала Word-документ " + describePath(output) + " и открыла его на экране."
+                : "Готово, создала Word-документ " + describePath(output) + ", но не смогла открыть его автоматически.";
         } catch (Exception e) {
             return "Не смогла создать Word-документ. Проверь, пожалуйста, доступ к папке.";
         }
+    }
+
+    private String openFromCommand(String input) {
+        Optional<Path> document = findRequestedDocument(input);
+        if (document.isEmpty()) {
+            return "Не нашла Word-документ для открытия. Скажи имя файла, например: открой документ \"report.docx\".";
+        }
+
+        Path path = document.get();
+        if (openPath(path)) {
+            return "Открыла Word-документ " + describePath(path) + ".";
+        }
+
+        return "Нашла Word-документ " + describePath(path) + ", но Windows не смог открыть его автоматически.";
+    }
+
+    private Optional<Path> findRequestedDocument(String input) {
+        String fileName = firstQuoted(input);
+        if (fileName.isBlank()) {
+            fileName = extractOpenTarget(input);
+        }
+
+        if (fileName.isBlank()) {
+            return findMostRecentDocx();
+        }
+
+        String normalizedName = fileName.toLowerCase(Locale.ROOT).endsWith(".docx") ? fileName : fileName + ".docx";
+        Path rawPath = Path.of(stripQuotes(fileName));
+        if (rawPath.isAbsolute() && Files.isRegularFile(rawPath)) {
+            return Optional.of(rawPath.toAbsolutePath().normalize());
+        }
+
+        Path[] candidates = {
+            defaultDirectory.resolve(normalizedName),
+            userHome.resolve("Documents").resolve(normalizedName),
+            userHome.resolve("Downloads").resolve(normalizedName),
+            defaultDirectory.resolve(fileName),
+            userHome.resolve("Documents").resolve(fileName),
+            userHome.resolve("Downloads").resolve(fileName)
+        };
+
+        for (Path candidate : candidates) {
+            Path normalized = candidate.toAbsolutePath().normalize();
+            if (Files.isRegularFile(normalized)) {
+                return Optional.of(normalized);
+            }
+        }
+
+        return searchDocxByName(fileName);
+    }
+
+    private Optional<Path> searchDocxByName(String query) {
+        String normalizedQuery = normalizeFileQuery(query);
+        Path[] roots = {defaultDirectory, userHome.resolve("Documents"), userHome.resolve("Downloads")};
+
+        for (Path root : roots) {
+            if (!Files.isDirectory(root)) {
+                continue;
+            }
+
+            try (Stream<Path> stream = Files.walk(root, 3)) {
+                Optional<Path> found = stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".docx"))
+                    .filter(path -> normalizeFileQuery(path.getFileName().toString()).contains(normalizedQuery))
+                    .max(Comparator.comparingLong(this::lastModifiedSafe));
+                if (found.isPresent()) {
+                    return found;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<Path> findMostRecentDocx() {
+        Path[] roots = {defaultDirectory, userHome.resolve("Documents"), userHome.resolve("Downloads")};
+        Optional<Path> best = Optional.empty();
+
+        for (Path root : roots) {
+            if (!Files.isDirectory(root)) {
+                continue;
+            }
+
+            try (Stream<Path> stream = Files.walk(root, 2)) {
+                Optional<Path> candidate = stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".docx"))
+                    .max(Comparator.comparingLong(this::lastModifiedSafe));
+                if (candidate.isPresent() && (best.isEmpty() || lastModifiedSafe(candidate.get()) > lastModifiedSafe(best.get()))) {
+                    best = candidate;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return best;
+    }
+
+    private String extractOpenTarget(String input) {
+        String cleaned = input == null ? "" : input
+            .replaceFirst("(?iu)^.*?(открой|покажи|запусти)\\s+", "")
+            .replaceAll("(?iu)(^|\\s)(word|ворд|вордовский|документ|файл)(?=\\s|$)", " ")
+            .replaceAll("(?iu)на\\s+главном\\s+экране|на\\s+экране", " ")
+            .replaceAll("\\s+", " ")
+            .trim();
+        return stripQuotes(cleaned);
+    }
+
+    private boolean openPath(Path path) {
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                Desktop.getDesktop().open(path.toFile());
+                return true;
+            }
+
+            new ProcessBuilder("cmd.exe", "/c", "start", "", path.toAbsolutePath().toString()).start();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isOpenIntent(String input) {
+        String lower = input == null ? "" : input.toLowerCase(Locale.ROOT).replace('ё', 'е');
+        return lower.contains("открой") || lower.contains("покажи") || lower.contains("запусти");
+    }
+
+    private boolean isCreateIntent(String input) {
+        String lower = input == null ? "" : input.toLowerCase(Locale.ROOT).replace('ё', 'е');
+        return lower.contains("создай")
+            || lower.contains("создать")
+            || lower.contains("сделай")
+            || lower.contains("сформируй")
+            || lower.contains("подготовь")
+            || lower.contains("напиши");
     }
 
     private DocumentRequest parse(String input) {
@@ -193,6 +342,23 @@ public class WordDocumentService {
             return "aura_document_" + LocalDateTime.now().format(NAME_TIME);
         }
         return name.length() > 50 ? name.substring(0, 50) : name;
+    }
+
+    private String normalizeFileQuery(String value) {
+        return value == null ? "" : value
+            .toLowerCase(Locale.ROOT)
+            .replace('ё', 'е')
+            .replaceFirst("(?i)\\.docx$", "")
+            .replaceAll("[^a-zа-я0-9]+", "")
+            .trim();
+    }
+
+    private long lastModifiedSafe(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toMillis();
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 
     private String describePath(Path path) {

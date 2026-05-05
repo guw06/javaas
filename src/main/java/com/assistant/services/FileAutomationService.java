@@ -1,5 +1,6 @@
 package com.assistant.services;
 
+import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,10 +9,12 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class FileAutomationService {
     private static final Pattern QUOTED_VALUE = Pattern.compile("\"([^\"]+)\"|'([^']+)'");
@@ -34,6 +37,9 @@ public class FileAutomationService {
     public String execute(String input) {
         String lower = normalize(input);
 
+        if (lower.contains("открой") || lower.contains("покажи") || lower.contains("запусти")) {
+            return open(input);
+        }
         if (lower.contains("перемести") || lower.contains("перенеси") || lower.contains("move")) {
             return move(input);
         }
@@ -74,7 +80,9 @@ public class FileAutomationService {
 
             if (folder) {
                 Files.createDirectories(path);
-                return "Готово, создала папку " + describePath(path) + ".";
+                return openPath(path)
+                    ? "Готово, создала папку " + describePath(path) + " и открыла её на экране."
+                    : "Готово, создала папку " + describePath(path) + ".";
             }
 
             Path parent = path.getParent();
@@ -86,9 +94,40 @@ public class FileAutomationService {
             }
 
             Files.writeString(path, content, StandardCharsets.UTF_8);
-            return "Готово, создала файл " + describePath(path) + ".";
+            return openPath(path)
+                ? "Готово, создала файл " + describePath(path) + " и открыла его на экране."
+                : "Готово, создала файл " + describePath(path) + ".";
         } catch (Exception e) {
             return "Не смогла создать. Проверь имя и доступ к папке.";
+        }
+    }
+
+    private String open(String input) {
+        String targetText = input.replaceFirst("(?iu)^.*?(открой|покажи|запусти)\\s+(файл|папку|папка|директорию|документ)?\\s*", "").trim();
+        String pathText = firstQuotedValue(targetText).orElse(targetText);
+        pathText = pathText.replaceAll("(?iu)\\b(на\\s+экране|на\\s+главном\\s+экране|пожалуйста)\\b", " ").trim();
+
+        if (pathText.isBlank()) {
+            return "Скажи, что открыть. Например: открой файл notes.txt или открой папку Документы.";
+        }
+
+        try {
+            Path path = resolveUserPath(pathText);
+            if (!Files.exists(path)) {
+                path = findByName(pathText).orElse(path);
+            }
+            if (!Files.exists(path)) {
+                return "Не нашла " + describePath(path) + ". Проверь имя файла или папки.";
+            }
+            if (!isSafeForWrite(path)) {
+                return "Не буду открывать системные папки Windows.";
+            }
+
+            return openPath(path)
+                ? "Открыла " + describePath(path) + " на экране."
+                : "Нашла " + describePath(path) + ", но Windows не смог открыть автоматически.";
+        } catch (Exception e) {
+            return "Не смогла открыть. Проверь имя и доступ к файлу.";
         }
     }
 
@@ -231,6 +270,51 @@ public class FileAutomationService {
         return target;
     }
 
+    private java.util.Optional<Path> findByName(String query) {
+        String normalizedQuery = normalizeFileQuery(query);
+        if (normalizedQuery.isBlank()) {
+            return java.util.Optional.empty();
+        }
+
+        Path[] roots = {
+            defaultBase,
+            userHome.resolve("Documents"),
+            userHome.resolve("Downloads")
+        };
+
+        for (Path root : roots) {
+            if (!Files.isDirectory(root)) {
+                continue;
+            }
+
+            try (Stream<Path> stream = Files.walk(root, 3)) {
+                java.util.Optional<Path> found = stream
+                    .filter(path -> normalizeFileQuery(path.getFileName() == null ? "" : path.getFileName().toString()).contains(normalizedQuery))
+                    .max(Comparator.comparingLong(this::lastModifiedSafe));
+                if (found.isPresent()) {
+                    return found;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        return java.util.Optional.empty();
+    }
+
+    private boolean openPath(Path path) {
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                Desktop.getDesktop().open(path.toFile());
+                return true;
+            }
+
+            new ProcessBuilder("cmd.exe", "/c", "start", "", path.toAbsolutePath().toString()).start();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private List<Path> buildProtectedRoots() {
         List<Path> roots = new ArrayList<>();
         addIfPresent(roots, System.getenv("SystemRoot"));
@@ -331,6 +415,22 @@ public class FileAutomationService {
             result = result.substring(1, result.length() - 1).trim();
         }
         return result;
+    }
+
+    private String normalizeFileQuery(String value) {
+        return value == null ? "" : value
+            .toLowerCase(Locale.ROOT)
+            .replace('ё', 'е')
+            .replaceAll("[^a-zа-я0-9._-]+", "")
+            .trim();
+    }
+
+    private long lastModifiedSafe(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toMillis();
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 
     private String normalize(String input) {

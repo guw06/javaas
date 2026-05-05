@@ -170,7 +170,7 @@ public class SmartAssistantService {
 
     private boolean isWordDocumentIntent(String text) {
         return containsAny(text, "word", "ворд", "docx", "документ", "реферат", "отчет")
-            && containsAny(text, "создай", "сделай", "напиши", "сформируй", "подготовь", "составь");
+            && containsAny(text, "создай", "сделай", "напиши", "сформируй", "подготовь", "составь", "открой", "покажи", "запусти");
     }
 
     private boolean isSportsIntent(String text) {
@@ -197,7 +197,7 @@ public class SmartAssistantService {
 
     private boolean isFileIntent(String text) {
         return containsAny(text, "файл", "папк", "директор")
-            && containsAny(text, "создай", "удали", "сотри", "убери", "перемести", "перенеси", "сделай", "создать", "удалить");
+            && containsAny(text, "создай", "удали", "сотри", "убери", "перемести", "перенеси", "сделай", "создать", "удалить", "открой", "покажи", "запусти");
     }
 
     private boolean isProgramIntent(String text) {
