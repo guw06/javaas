@@ -1,5 +1,7 @@
 package com.assistant.services;
 
+import com.assistant.utils.SafeFileWalker;
+
 import java.awt.Desktop;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -125,7 +127,7 @@ public class WordDocumentService {
                 continue;
             }
 
-            try (Stream<Path> stream = Files.walk(root, 3)) {
+            try (Stream<Path> stream = SafeFileWalker.walk(root, 3)) {
                 Optional<Path> found = stream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".docx"))
@@ -150,7 +152,7 @@ public class WordDocumentService {
                 continue;
             }
 
-            try (Stream<Path> stream = Files.walk(root, 2)) {
+            try (Stream<Path> stream = SafeFileWalker.walk(root, 2)) {
                 Optional<Path> candidate = stream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".docx"))

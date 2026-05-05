@@ -6,6 +6,7 @@ import com.assistant.commands.ComputerAgentCommand;
 import com.assistant.commands.FileControlCommand;
 import com.assistant.commands.NetworkControlCommand;
 import com.assistant.commands.NewsCommand;
+import com.assistant.commands.OpenBrowserCommand;
 import com.assistant.commands.ProblemSolverCommand;
 import com.assistant.commands.ProgramControlCommand;
 import com.assistant.commands.SportsScoreCommand;
@@ -27,6 +28,7 @@ public class SmartAssistantService {
     private final WordDocumentCommand wordDocument = new WordDocumentCommand();
     private final SportsScoreCommand sports = new SportsScoreCommand();
     private final NewsCommand news = new NewsCommand();
+    private final OpenBrowserCommand openBrowser = new OpenBrowserCommand();
     private final ProgramControlCommand programs = new ProgramControlCommand();
     private final BrowserTabsCommand browser = new BrowserTabsCommand();
     private final NetworkControlCommand network = new NetworkControlCommand();
@@ -60,11 +62,17 @@ public class SmartAssistantService {
         if (isNewsIntent(text)) {
             return Optional.of(news.execute(input));
         }
-        if (isMathIntent(text)) {
-            return Optional.of(calculator.execute(input));
-        }
         if (isProblemSolvingIntent(text)) {
             return Optional.of(problemSolver.execute(input));
+        }
+        if (isOpenBrowserIntent(text)) {
+            return Optional.of(openBrowser.execute(input));
+        }
+        if (isProgramIntent(text)) {
+            return Optional.of(programs.execute(input));
+        }
+        if (isMathIntent(text)) {
+            return Optional.of(calculator.execute(input));
         }
         if (isNetworkIntent(text)) {
             return Optional.of(network.execute(input));
@@ -77,9 +85,6 @@ public class SmartAssistantService {
         }
         if (isFileIntent(text)) {
             return Optional.of(files.execute(input));
-        }
-        if (isProgramIntent(text)) {
-            return Optional.of(programs.execute(input));
         }
 
         return Optional.empty();
@@ -191,8 +196,32 @@ public class SmartAssistantService {
         return containsAny(text, "диспетчер задач", "task manager", "taskmgr");
     }
 
+    private boolean isOpenBrowserIntent(String text) {
+        boolean mentionsBrowser = containsAny(text,
+            "браузер", "интернет", "google", "гугл", "chrome", "хром", "edge", "эдж", "яндекс", "yandex"
+        );
+        if (!mentionsBrowser) {
+            return false;
+        }
+
+        boolean tabOnly = containsAny(text,
+            "вкладк", "новая вклад", "следующ", "предыдущ", "адресная строка", "обнови вклад", "закрой вклад"
+        );
+        if (tabOnly) {
+            return false;
+        }
+
+        return containsAny(text,
+            "открой", "открыть", "запусти", "запустить", "стартани", "включи", "покажи", "зайди", "перейди", "найди", "поищи", "закрой"
+        );
+    }
+
     private boolean isBrowserIntent(String text) {
-        return containsAny(text, "вкладк", "браузер", "сайт", "адресная строка", "перейди на", "зайди на", "открой youtube", "открой google");
+        return containsAny(text,
+            "вкладк", "адресная строка", "перейди на", "зайди на", "открой сайт", "сайт ",
+            "http://", "https://", "www.", ".com", ".ru", ".org", ".net", ".kz"
+        )
+            || (containsAny(text, "обнови", "перезагрузи", "refresh", "reload") && containsAny(text, "страниц", "вкладк"));
     }
 
     private boolean isFileIntent(String text) {
@@ -201,8 +230,18 @@ public class SmartAssistantService {
     }
 
     private boolean isProgramIntent(String text) {
-        return containsAny(text, "открой", "запусти", "стартани", "открой ка", "закрой", "выключи приложение", "заверши")
-            && containsAny(text, "калькулятор", "проводник", "блокнот", "paint", "chrome", "edge", "cmd", "powershell", "терминал");
+        boolean action = containsAny(text,
+            "открой", "открыть", "запусти", "запустить", "стартани", "запусти приложение", "открой приложение",
+            "закрой", "закрыть", "выключи приложение", "заверши"
+        );
+        if (!action) {
+            return false;
+        }
+
+        return containsAny(text,
+            "приложение", "программу", "программа", "калькулятор", "проводник", "блокнот", "paint", "пэйнт",
+            "cmd", "командная строка", "powershell", "пауэршелл", "терминал", "terminal"
+        );
     }
 
     private boolean containsAny(String text, String... values) {

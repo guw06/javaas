@@ -1,5 +1,7 @@
 package com.assistant.services;
 
+import com.assistant.utils.SafeFileWalker;
+
 import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -88,7 +90,7 @@ public class FileSearchService {
                 continue;
             }
 
-            try (Stream<Path> stream = Files.walk(root, 5)) {
+            try (Stream<Path> stream = SafeFileWalker.walk(root, 5)) {
                 stream
                     .filter(path -> includeDirectories || Files.isRegularFile(path))
                     .map(path -> score(path, terms, wantedExtensions, latest))

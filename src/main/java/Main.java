@@ -11,6 +11,9 @@ import com.assistant.services.ReminderService;
 import com.assistant.services.SystemTrayService;
 
 import java.awt.Desktop;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -274,20 +277,22 @@ public class Main {
                 staticFileConfig.location = Location.EXTERNAL;
                 staticFileConfig.hostedPath = "/";
             });
-        }).start(8080);
+        });
+        int port = startApp(app, resolvePort());
+        String serverUrl = "http://localhost:" + port;
         
         System.out.println("\n" +
             "╔═══════════════════════════════════════════════════════════╗\n" +
             "║  AURA — Персональный ИИ-Ассистент                       ║\n" +
-            "║  🚀 Сервер запущен на порту 8080                        ║\n" +
+            "║  🚀 Сервер запущен на порту " + port + "                        ║\n" +
             "║  ⚡ Java 21 | Gemini/OpenAI | Local Brain               ║\n" +
             "║  📝 Команд: " + commandManager.getCommandCount() + " | Алиасов: 150+                       ║\n" +
-            "║  🔗 http://localhost:8080                                ║\n" +
+            "║  🔗 " + serverUrl + "                                ║\n" +
             "╚═══════════════════════════════════════════════════════════╝\n"
         );
 
-        openBrowser("http://localhost:8080");
-        trayService.install("http://localhost:8080");
+        openBrowser(serverUrl);
+        trayService.install(serverUrl);
 
         app.get("/ping", ctx -> ctx.result("pong"));
         
@@ -371,6 +376,56 @@ public class Main {
             app.stop();
             System.out.println("✅ Все ресурсы освобождены. До свидания!");
         }));
+    }
+
+    private static int startApp(Javalin app, int preferredPort) {
+        int port = findAvailablePort(preferredPort);
+        app.start(port);
+        if (port != preferredPort) {
+            System.out.println("[WARN] Preferred port " + preferredPort + " was busy. Using port " + port + " instead.");
+        }
+        return port;
+    }
+
+    private static int findAvailablePort(int preferredPort) {
+        int maxPort = Math.min(65535, preferredPort + 20);
+        for (int port = preferredPort; port <= maxPort; port++) {
+            if (isPortAvailable(port)) {
+                return port;
+            }
+            System.out.println("[WARN] Port " + port + " is busy.");
+        }
+        throw new IllegalStateException("Could not start AURA: no free ports from " + preferredPort + " to " + maxPort + ".");
+    }
+
+    private static boolean isPortAvailable(int port) {
+        try (ServerSocket socket = new ServerSocket()) {
+            socket.setReuseAddress(false);
+            socket.bind(new InetSocketAddress("0.0.0.0", port));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static int resolvePort() {
+        String rawPort = System.getProperty("aura.port");
+        if (rawPort == null || rawPort.isBlank()) {
+            rawPort = System.getenv("AURA_PORT");
+        }
+        return parsePort(rawPort, 8080);
+    }
+
+    private static int parsePort(String rawPort, int fallback) {
+        if (rawPort == null || rawPort.isBlank()) {
+            return fallback;
+        }
+        try {
+            int port = Integer.parseInt(rawPort.trim());
+            return port >= 1 && port <= 65535 ? port : fallback;
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
     
     private static void openBrowser(String url) {

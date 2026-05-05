@@ -1,5 +1,7 @@
 package com.assistant.services;
 
+import com.assistant.utils.SafeFileWalker;
+
 import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -287,7 +289,7 @@ public class FileAutomationService {
                 continue;
             }
 
-            try (Stream<Path> stream = Files.walk(root, 3)) {
+            try (Stream<Path> stream = SafeFileWalker.walk(root, 3)) {
                 java.util.Optional<Path> found = stream
                     .filter(path -> normalizeFileQuery(path.getFileName() == null ? "" : path.getFileName().toString()).contains(normalizedQuery))
                     .max(Comparator.comparingLong(this::lastModifiedSafe));

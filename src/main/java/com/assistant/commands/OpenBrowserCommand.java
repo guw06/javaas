@@ -21,6 +21,13 @@ public class OpenBrowserCommand implements Command {
             return "Уточните браузер: закрой chrome или закрой edge.";
         }
 
+        if (lower.contains("chrome") || lower.contains("хром")) {
+            return windows.openProgram("chrome");
+        }
+        if (lower.contains("edge") || lower.contains("эдж")) {
+            return windows.openProgram("edge");
+        }
+
         return windows.openBrowserTarget(input);
     }
 }

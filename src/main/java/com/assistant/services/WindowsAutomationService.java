@@ -181,7 +181,10 @@ public class WindowsAutomationService {
             new ProcessBuilder(executable).start();
             return successMessage;
         } catch (IOException e) {
-            return "Не смогла запустить программу. Возможно, она не установлена или Windows не дает доступ.";
+            CommandResult shellResult = runCommand(List.of("cmd.exe", "/c", "start", "", executable), DEFAULT_TIMEOUT_SECONDS);
+            return shellResult.success()
+                ? successMessage
+                : "Не смогла запустить программу. Возможно, она не установлена или Windows не дает доступ.";
         }
     }
 

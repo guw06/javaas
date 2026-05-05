@@ -1,5 +1,7 @@
 package com.assistant.services;
 
+import com.assistant.utils.SafeFileWalker;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -190,7 +192,7 @@ public class ComputerAgentService {
             return List.of();
         }
 
-        try (Stream<Path> stream = Files.walk(location, 5)) {
+        try (Stream<Path> stream = SafeFileWalker.walk(location, 5)) {
             return stream
                 .filter(Files::isRegularFile)
                 .filter(path -> matchesExtension(path, extensions))

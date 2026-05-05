@@ -34,8 +34,8 @@ if errorlevel 1 (
 )
 
 echo [INFO] Maven check passed.
-echo [INFO] Stopping old AURA on port 8080 if it is already running...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $response = Invoke-WebRequest -UseBasicParsing 'http://localhost:8080/ping' -TimeoutSec 2; if ($response.Content.Trim() -eq 'pong') { $connection = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if ($connection) { Stop-Process -Id $connection.OwningProcess -Force; Start-Sleep -Seconds 2 } } } catch {}"
+echo [INFO] Stopping old AURA if it is already running...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "for ($port = 8080; $port -le 8100; $port++) { try { $url = 'http://localhost:' + $port + '/ping'; $response = Invoke-WebRequest -UseBasicParsing $url -TimeoutSec 1; if ($response.Content.Trim() -eq 'pong') { $connection = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if ($connection) { $process = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $connection.OwningProcess) -ErrorAction SilentlyContinue; if ($process.CommandLine -like '*javaas-1.0-SNAPSHOT.jar*') { Stop-Process -Id $connection.OwningProcess -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 } } } } catch {} }"
 
 echo [INFO] Building fresh version...
 call mvn clean package -q -DskipTests
